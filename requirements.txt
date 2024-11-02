@@ -1,0 +1,5 @@
+numpy
+pandas
+flask
+torch==2.3.0
+torchtext==0.18.0
