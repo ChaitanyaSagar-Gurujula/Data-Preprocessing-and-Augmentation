@@ -55,6 +55,15 @@
             <label><input type="checkbox" id="stopword-removal"> Stop Word Removal</label>
             <label><input type="checkbox" id="padding"> Padding (Max Length: 20)</label>
         </div>
+        
+        <!-- Add new augmentation options section -->
+        <div class="augmentation-options">
+            <h3>Select Augmentation Options:</h3>
+            <label><input type="checkbox" id="mlm-replace"> Word Replacement (MLM)</label>
+            <label><input type="checkbox" id="random-insert"> Random Insertion</label>
+            <label><input type="checkbox" id="random-delete"> Random Deletion</label>
+        </div>
+        
         <button onclick="preprocessData()">Preprocess Data</button>
         <button onclick="augmentData()">Augment Data</button>
     </div>

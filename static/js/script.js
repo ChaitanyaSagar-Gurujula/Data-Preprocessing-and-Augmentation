@@ -74,23 +74,50 @@ async function preprocessData() {
 }
 
 async function augmentData() {
-    if (!currentData) return;
+    if (!originalText) {
+        console.log('No text available');
+        return;
+    }
 
     try {
+        console.log('Sending data for augmentation:', currentData); // Debug log
+        
+        const options = {
+            mlm_replacement: document.getElementById('mlm-replace')?.checked || false,
+            random_insertion: document.getElementById('random-insert')?.checked || false,
+            random_deletion: document.getElementById('random-delete')?.checked || false
+        };
+
+        console.log('Selected options:', options); // Debug log
+
         const response = await fetch('/augment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ data: currentData }),
+            body: JSON.stringify({
+                data: originalText,
+                options: options
+            }),
         });
-        const result = await response.json();
-        if (response.ok) {
-            displayTableData(result.data);
-            currentData = result.data;
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
+        
+        const result = await response.json();
+        console.log('Received augmented data:', result);
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        displayAugmentedData(result);
+        currentData = result;
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in augmentation:', error);
+        alert('Error augmenting data: ' + error.message);
     }
 }
 
@@ -225,5 +252,86 @@ function displayPreprocessingSteps(container, steps) {
         .join('');
     
     container.innerHTML = stepsHtml || 'No preprocessing steps were applied';
+}
+
+function displayAugmentedData(data) {
+    console.log('Displaying augmented data:', data);
+    const container = document.getElementById('data-container');
+    
+    // Create tab container
+    const tabContainer = document.createElement('div');
+    tabContainer.className = 'tab-container';
+    
+    // Create tab buttons
+    const tabButtons = document.createElement('div');
+    tabButtons.className = 'tab-buttons';
+    
+    const stepsButton = document.createElement('button');
+    stepsButton.textContent = 'Augmentation Steps';
+    stepsButton.className = 'active';
+    
+    const tokensButton = document.createElement('button');
+    tokensButton.textContent = 'Tokens';
+    
+    const tokenIdsButton = document.createElement('button');
+    tokenIdsButton.textContent = 'Token IDs';
+    
+    tabButtons.appendChild(stepsButton);
+    tabButtons.appendChild(tokensButton);
+    tabButtons.appendChild(tokenIdsButton);
+    
+    // Create tab content
+    const tabContent = document.createElement('div');
+    tabContent.className = 'tab-content';
+    
+    // Initial display of augmentation steps
+    displayAugmentationSteps(tabContent, data.augmentation_steps);
+    
+    // Add click handlers for tabs
+    stepsButton.onclick = () => {
+        setActiveTab(stepsButton);
+        displayAugmentationSteps(tabContent, data.augmentation_steps);
+    };
+    
+    tokensButton.onclick = () => {
+        setActiveTab(tokensButton);
+        tabContent.textContent = Array.isArray(data.tokens) ? data.tokens.join(' ') : 'No tokens available';
+    };
+    
+    tokenIdsButton.onclick = () => {
+        setActiveTab(tokenIdsButton);
+        tabContent.textContent = Array.isArray(data.token_ids) ? data.token_ids.join(' ') : 'No token IDs available';
+    };
+    
+    tabContainer.appendChild(tabButtons);
+    tabContainer.appendChild(tabContent);
+    
+    container.innerHTML = '';
+    container.appendChild(tabContainer);
+}
+
+function displayAugmentationSteps(container, steps) {
+    if (!steps || Object.keys(steps).length === 0) {
+        container.textContent = 'No augmentation steps were applied';
+        return;
+    }
+    
+    const stepsHtml = Object.entries(steps)
+        .map(([step, data]) => `
+            <div class="augmentation-step">
+                <h4>${step}</h4>
+                <p><strong>Result:</strong> ${data.text}</p>
+                <p><strong>Details:</strong> ${data.details.join(', ')}</p>
+            </div>
+        `)
+        .join('');
+    
+    container.innerHTML = stepsHtml;
+}
+
+function setActiveTab(activeButton) {
+    const buttons = activeButton.parentElement.getElementsByTagName('button');
+    Array.from(buttons).forEach(button => button.className = '');
+    activeButton.className = 'active';
 }
 

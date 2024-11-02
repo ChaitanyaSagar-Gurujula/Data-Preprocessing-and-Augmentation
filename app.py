@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify, url_for
-from io import StringIO
+from flask import Flask, render_template, request, jsonify
 from preprocessing.text_preprocessing import TextPreprocessor
+from preprocessing.text_augmentation import TextAugmenter
 
 app = Flask(__name__)
 
 preprocessor = TextPreprocessor()
+augmenter = TextAugmenter()  # Initialize the augmenter
 
 @app.route('/')
 def index():
@@ -35,15 +36,26 @@ def preprocess():
 
 @app.route('/augment', methods=['POST'])
 def augment():
-    data = request.json
-    df = pd.DataFrame(data['data'])
-    
-    # Add your augmentation steps here
-    df['new_column'] = np.random.rand(len(df))
-    
-    # Convert the DataFrame to a list of dictionaries for JSON serialization
-    augmented_data = df.to_dict('records')
-    return jsonify({'data': augmented_data})
+    try:
+        data = request.json
+        if not data or 'data' not in data or 'options' not in data:
+            return jsonify({'error': 'Invalid request data'}), 400
+            
+        content = data['data']
+        options = data['options']
+        
+        # If content is a dictionary (from preprocessing), get the tokens
+        if isinstance(content, dict) and 'tokens' in content:
+            text = ' '.join(content['tokens'])
+        else:
+            text = str(content)
+        
+        result = augmenter.augment(text, options)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error in augmentation: {str(e)}")  # Debug print
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
