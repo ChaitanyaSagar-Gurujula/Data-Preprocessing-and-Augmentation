@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify, url_for
 from io import StringIO
-from preprocessing.text_preprocessing import tokenize
+from preprocessing.text_preprocessing import TextPreprocessor
 
 app = Flask(__name__)
+
+preprocessor = TextPreprocessor()
 
 @app.route('/')
 def index():
@@ -23,11 +25,13 @@ def upload():
 @app.route('/preprocess', methods=['POST'])
 def preprocess():
     data = request.json
-    print("data", data)
     content = data['data']
-    tokens, token_ids = tokenize(content)
-        
-    return jsonify({'tokens': tokens, 'token_ids': token_ids})
+    options = data['options']
+    
+    # Process the text and get all results
+    result = preprocessor.preprocess(content, options)
+    
+    return jsonify(result)
 
 @app.route('/augment', methods=['POST'])
 def augment():

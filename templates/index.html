@@ -26,6 +26,16 @@
             border: 1px solid #ccc;
             padding: 20px;
         }
+        .preprocessing-options {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .preprocessing-options label {
+            display: block;
+            margin: 8px 0;
+        }
     </style>
 </head>
 <body>
@@ -38,6 +48,13 @@
     </div>
 
     <div id="process-section" style="display: none;">
+        <div class="preprocessing-options">
+            <h3>Select Preprocessing Options:</h3>
+            <label><input type="checkbox" id="case-norm"> Case Normalization</label>
+            <label><input type="checkbox" id="punct-removal"> Punctuation Removal</label>
+            <label><input type="checkbox" id="stopword-removal"> Stop Word Removal</label>
+            <label><input type="checkbox" id="padding"> Padding (Max Length: 20)</label>
+        </div>
         <button onclick="preprocessData()">Preprocess Data</button>
         <button onclick="augmentData()">Augment Data</button>
     </div>
