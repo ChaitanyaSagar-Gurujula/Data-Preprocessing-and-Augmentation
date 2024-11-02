@@ -1,4 +1,5 @@
 let currentData = null;
+let originalText = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('case-norm element:', document.getElementById('case-norm'));
@@ -22,6 +23,7 @@ async function uploadFile() {
             displayRawData(result.data);
             document.getElementById('process-section').style.display = 'block';
             currentData = result.data;
+            originalText = result.data;
         } else {
             alert(result.error);
         }
@@ -31,32 +33,26 @@ async function uploadFile() {
 }
 
 async function preprocessData() {
-    if (!currentData) {
-        console.log('No current data available');
+    if (!originalText) {
+        console.log('No text available');
         return;
     }
 
-    // Add error checking for each checkbox
     const options = {
         case_normalization: document.getElementById('case-norm')?.checked || false,
         punctuation_removal: document.getElementById('punct-removal')?.checked || false,
         stopword_removal: document.getElementById('stopword-removal')?.checked || false,
-        lemmatization: document.getElementById('lemmatization')?.checked || false,
-        stemming: document.getElementById('stemming')?.checked || false,
         padding: document.getElementById('padding')?.checked || false
     };
 
-    console.log('Selected options:', options);  // Add this for debugging
-
     try {
-        console.log('Sending data for preprocessing:', currentData);
         const response = await fetch('/preprocess', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                data: currentData,
+                data: originalText,
                 options: options
             }),
         });
@@ -68,7 +64,6 @@ async function preprocessData() {
         
         const result = await response.json();
         console.log('Received preprocessed data:', result);
-        console.log('Preprocessing steps:', result.preprocessing_steps);
         
         displayPreprocessedData(result);
         currentData = result;
