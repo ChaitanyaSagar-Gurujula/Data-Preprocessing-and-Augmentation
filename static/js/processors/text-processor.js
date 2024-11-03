@@ -8,7 +8,7 @@ class TextProcessor {
         const options = {
             case_normalization: document.getElementById('case-norm')?.checked || false,
             punctuation_removal: document.getElementById('punct-removal')?.checked || false,
-            stop_word_removal: document.getElementById('stopword-removal')?.checked || false,
+            stopword_removal: document.getElementById('stopword-removal')?.checked || false,
             padding: document.getElementById('padding')?.checked || false,
             padding_length: parseInt(document.getElementById('padding-length')?.value || '20')
         };

@@ -53,7 +53,7 @@ class DisplayManager {
                 stepsHtml += `
                     <div class="preprocessing-step">
                         <div class="step-title">${stepName}</div>
-                        <div class="step-content">${steps[stepName]}</div>
+                        <div class="step-content">${this.escapeHtml(steps[stepName])}</div>
                     </div>
                     <div class="step-arrow"></div>
                 `;
@@ -68,7 +68,7 @@ class DisplayManager {
                     <div class="tokens-display">
                         ${data.tokens.map((token, index) => `
                             <div class="token" style="background-color: ${this.getTokenColor(token)}">
-                                <span class="token-text">${token}</span>
+                                <span class="token-text">${this.escapeHtml(token)}</span>
                                 <span class="token-id">${data.token_ids[index]}</span>
                             </div>
                         `).join('')}
@@ -83,7 +83,7 @@ class DisplayManager {
     static getTokenColor(token) {
         // Special tokens
         if (token === '<PAD>') {
-            return '#f8d7da'; // Light red for padding tokens
+            return '#f0f0f0'; // Light gray for padding tokens
         }
         
         // Generate a consistent color based on the token string
@@ -244,5 +244,9 @@ class DisplayManager {
         const words = text.split(' ');
         words.splice(position, 0, `<mark class="highlight-insert" title="Inserted word">${word}</mark>`);
         return words.join(' ');
+    }   
+
+    static escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 } 
