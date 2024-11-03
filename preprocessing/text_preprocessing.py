@@ -29,38 +29,32 @@ class TextPreprocessor:
     def preprocess(self, text, options):
         steps = {}
         processed_text = text
-        full_processed_text = text
         
         # Text-level preprocessing
         # Case normalization
         if options.get('case_normalization'):
             processed_text = text.lower()
-            full_processed_text = full_processed_text.lower()
             steps['Case Normalization'] = processed_text
         
         # Punctuation removal
         if options.get('punctuation_removal'):
-            processed_text = text.translate(str.maketrans('', '', string.punctuation))
-            full_processed_text = full_processed_text.translate(str.maketrans('', '', string.punctuation))
+            processed_text = processed_text.translate(str.maketrans('', '', string.punctuation))
             steps['Punctuation Removal'] = processed_text
         
         # Now perform tokenization after all text-level preprocessing
-        words = self.tokenizer(text)
-        full_words = self.tokenizer(full_processed_text)
+        words = self.tokenizer(processed_text)
         # Token-level preprocessing
         # Stop word removal
         if options.get('stopword_removal'):
             words = [word for word in words if word.lower() not in self.stop_words]
-            full_words = [word for word in full_words if word.lower() not in self.stop_words]
             steps['Stop Word Removal'] = ' '.join(words)
         
         # Generate token IDs
-        token_ids = [ord(word[0]) if word else 0 for word in full_words]
+        token_ids = [ord(word[0]) if word else 0 for word in words]
 
         # Padding (if selected)
         if options.get('padding'):
             words = self.pad_sequence(words, pad_value='<PAD>') 
-            full_words = self.pad_sequence(full_words, pad_value='<PAD>')
             token_ids = self.pad_sequence(token_ids, pad_value=0)
             steps['Padding'] = ' '.join(words)
 
@@ -68,7 +62,7 @@ class TextPreprocessor:
         
         return {
             'preprocessing_steps': steps,
-            'tokens': full_words,
+            'tokens': words,
             'token_ids': token_ids,
-            'original_length': len(full_words)
+            'original_length': len(words)
         }

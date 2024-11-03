@@ -13,91 +13,113 @@ class TextAugmenter:
         self.unmasker = pipeline('fill-mask', model='bert-base-uncased')
         self.mask_token = '[MASK]'
         
-    def word_replacement_mlm(self, text):
+    def word_replacement_mlm(self, text, n_words=1):
         """Replace random words using BERT MLM"""
         words = text.split()
+        changes = {'positions': [], 'old_words': [], 'new_words': []}
+        
         if not words:
-            return text, []
+            return text, changes
             
-        # Randomly select a word to replace (excluding special tokens)
+        # Randomly select words to replace (excluding special tokens)
         replaceable_positions = [i for i, word in enumerate(words) 
                                if word not in ['<PAD>', '[MASK]']]
+        
         if not replaceable_positions:
-            return text, []
+            return text, changes
+        
+        # Randomly select n positions to replace
+        n_words = min(n_words, len(replaceable_positions))
+        positions_to_replace = random.sample(replaceable_positions, n_words)
+        
+        for pos in positions_to_replace:
+            original_word = words[pos]
             
-        pos = random.choice(replaceable_positions)
-        original_word = words[pos]
+            # Create masked text
+            words[pos] = self.mask_token
+            masked_text = ' '.join(words)
         
-        # Create masked text
-        words[pos] = self.mask_token
-        masked_text = ' '.join(words)
+            # Get predictions
+            predictions = self.unmasker(masked_text)
+            new_word = predictions[0]['token_str']
         
-        # Get predictions
-        predictions = self.unmasker(masked_text)
-        new_word = predictions[0]['token_str']
+            # Replace word
+            words[pos] = new_word
+            
+            # Track changes
+            changes['positions'].append(pos)
+            changes['old_words'].append(original_word)
+            changes['new_words'].append(new_word)
         
-        # Replace word
-        words[pos] = new_word
-        augmented_text = ' '.join(words)
+        return ' '.join(words), changes
         
-        return augmented_text, [f"Replaced '{original_word}' with '{new_word}'"]
-        
-    def random_insertion(self, text):
+    def random_insertion(self, text, n_words=1):
         """Insert words randomly from the existing vocabulary"""
         words = text.split()
+        changes = {'positions': [], 'new_words': []}
+        
         if not words:
-            return text, []
+            return text, changes
             
-        # Select a random word from existing vocabulary
         insertable_words = [w for w in words if w not in ['<PAD>', '[MASK]']]
         if not insertable_words:
-            return text, []
+            return text, changes
+        
+        for _ in range(n_words):
+            word_to_insert = random.choice(insertable_words)
+            position = random.randint(0, len(words))
             
-        word_to_insert = random.choice(insertable_words)
-        position = random.randint(0, len(words))
+            # Insert word
+            words.insert(position, word_to_insert)
+            
+            # Track changes
+            changes['positions'].append(position)
+            changes['new_words'].append(word_to_insert)
         
-        # Insert word
-        words.insert(position, word_to_insert)
-        augmented_text = ' '.join(words)
+        return ' '.join(words), changes
         
-        return augmented_text, [f"Inserted '{word_to_insert}' at position {position}"]
-        
-    def random_deletion(self, text):
+    def random_deletion(self, text, n_words=1):
         """Randomly delete words"""
         words = text.split()
+        changes = {'positions': [], 'deleted_words': []}
+        
         if not words:
-            return text, []
+            return text, changes
             
-        # Select a word to delete (excluding special tokens)
         deletable_positions = [i for i, word in enumerate(words) 
                              if word not in ['<PAD>', '[MASK]']]
+        
         if not deletable_positions:
-            return text, []
+            return text, changes
+
+        # Randomly select n positions to delete
+        n_words = min(n_words, len(deletable_positions))
+        positions_to_delete = sorted(random.sample(deletable_positions, n_words), reverse=True)
+        
+        for pos in positions_to_delete:
+            deleted_word = words[pos]
+            words.pop(pos)
             
-        pos = random.choice(deletable_positions)
-        deleted_word = words[pos]
+            # Track changes
+            changes['positions'].append(pos)
+            changes['deleted_words'].append(deleted_word)
         
-        # Delete word
-        words.pop(pos)
-        augmented_text = ' '.join(words)
+        return ' '.join(words), changes
         
-        return augmented_text, [f"Deleted '{deleted_word}' from position {pos}"]
-        
-    def word_replacement(self, text):
+    def word_replacement(self, text, n_words=1):
         """Replace random word with another from vocabulary"""
         words = text.split()
         if len(words) < 2:  # Need at least 2 words to replace
-            return text, []
-            
-        # Select positions for replacement
-        pos = random.randint(0, len(words) - 1)
-        replacement = random.choice(words)  # Use existing word as replacement
+            return text
         
-        original_word = words[pos]
-        words[pos] = replacement
+        for _ in range(n_words):
+            # Select positions for replacement
+            pos = random.randint(0, len(words) - 1)
+            replacement = random.choice(words)  # Use existing word as replacement
+            words[pos] = replacement
         
         augmented_text = ' '.join(words)
-        return augmented_text, [f"Replaced '{original_word}' with '{replacement}'"]
+        return augmented_text
         
     def get_wordnet_pos(self, word):
         """Map POS tag to first character lemmatize() accepts"""
@@ -117,75 +139,90 @@ class TextAugmenter:
                     synonyms.append(lemma.name())
         return list(set(synonyms))  # Remove duplicates
 
-    def synonym_replacement(self, text):
-        """Replace random word with its synonym"""
+    def synonym_replacement(self, text, n_words=1):
+        """Replace random words with synonyms"""
         words = text.split()
-        if not words:
-            return text, []
-
-        # Try to find a word with synonyms
-        random.shuffle(words)  # Shuffle to try different words
-        for idx, word in enumerate(words):
-            if word in ['<PAD>', '[MASK]']:  # Skip special tokens
-                continue
-                
-            synonyms = self.get_synonyms(word)
-            if synonyms:  # If synonyms found
-                original_word = words[idx]
-                words[idx] = random.choice(synonyms)
-                augmented_text = ' '.join(words)
-                return augmented_text, [f"Replaced '{original_word}' with its synonym '{words[idx]}'"]
+        changes = {'positions': [], 'old_words': [], 'new_words': []}
         
-        return text, ["No suitable words found for synonym replacement"]
+        if not words:
+            return text, changes
 
-    def augment(self, text, options):
+        # Find replaceable words (those with synonyms)
+        replaceable_positions = []
+        for i, word in enumerate(words):
+            if word not in ['<PAD>', '[MASK]']:
+                synonyms = self.get_synonyms(word)
+                if synonyms:
+                    replaceable_positions.append((i, word, synonyms))
+        
+        if not replaceable_positions:
+            return text, changes
+        
+        # Randomly select n words to replace
+        n_words = min(n_words, len(replaceable_positions))
+        positions_to_replace = random.sample(replaceable_positions, n_words)
+        
+        for pos, word, synonyms in positions_to_replace:
+            synonym = random.choice(synonyms)
+            words[pos] = synonym
+            
+            # Track changes
+            changes['positions'].append(pos)
+            changes['old_words'].append(word)
+            changes['new_words'].append(synonym)
+        
+        return ' '.join(words), changes
+
+    def augment(self, text, options, n_words):
         """Apply selected augmentation techniques"""
         steps = {}
         augmented_text = text
-        full_augmented_text = text
         
         # Convert input to text if it's a dictionary
         if isinstance(text, dict) and 'tokens' in text:
             augmented_text = ' '.join(text['tokens'])
         
         if options.get('synonym_replacement'):
-            augmented_text, details = self.synonym_replacement(augmented_text)
+            augmented_text, changes = self.synonym_replacement(
+                augmented_text, 
+                n_words=n_words['synonym_replacement']
+            )
             steps['Synonym Replacement'] = {
                 'text': augmented_text,
-                'details': details
+                'changes': changes
             }
             
         if options.get('mlm_replacement'):
-            augmented_text, details = self.word_replacement_mlm(text)
-            full_augmented_text, _ = self.word_replacement_mlm(full_augmented_text)
+            augmented_text, changes = self.word_replacement_mlm(
+                augmented_text, 
+                n_words=n_words['mlm_replacement']
+            )
             steps['Word Replacement'] = {
                 'text': augmented_text,
-                'details': details
+                'changes': changes
             }
             
         if options.get('random_insertion'):
-            augmented_text, details = self.random_insertion(text)
-            full_augmented_text, _ = self.random_insertion(full_augmented_text)
+            augmented_text, changes = self.random_insertion(
+                augmented_text, 
+                n_words=n_words['random_insertion']
+            )
             steps['Random Insertion'] = {
                 'text': augmented_text,
-                'details': details
+                'changes': changes
             }
             
         if options.get('random_deletion'):
-            augmented_text, details = self.random_deletion(text)
-            full_augmented_text, _ = self.random_deletion(full_augmented_text)
+            augmented_text, changes = self.random_deletion(
+                augmented_text, 
+                n_words=n_words['random_deletion']
+            )
             steps['Random Deletion'] = {
                 'text': augmented_text,
-                'details': details
+                'changes': changes
             }
-
-        # Create tokens and token_ids from final text
-        tokens = full_augmented_text.split()
-        token_ids = [ord(token[0]) if token else 0 for token in tokens]
             
         return {
             'augmentation_steps': steps,
-            'tokens': tokens,
-            'token_ids': token_ids,
-            'augmented_text': full_augmented_text
+            'augmented_text': augmented_text
         } 

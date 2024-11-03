@@ -8,27 +8,99 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('padding element:', document.getElementById('padding'));
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const fileNameDisplay = document.getElementById('file-name');
+
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    // Highlight drop zone when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    // Handle dropped files
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    // Handle file input change
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            fileNameDisplay.textContent = this.files[0].name;
+            uploadFile();
+        }
+    });
+
+    function preventDefaults (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        dropZone.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('dragover');
+    }
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        if (files && files[0]) {
+            fileInput.files = files;
+            fileNameDisplay.textContent = files[0].name;
+            uploadFile();
+        }
+    }
+});
+
 async function uploadFile() {
     const fileInput = document.getElementById('file-input');
     const formData = new FormData();
+    
+    if (!fileInput.files || !fileInput.files[0]) {
+        console.log('No file selected');
+        return;
+    }
+
     formData.append('file', fileInput.files[0]);
 
     try {
+        console.log('Uploading file...');
         const response = await fetch('/upload', {
             method: 'POST',
             body: formData
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const result = await response.json();
-        if (response.ok) {
+        console.log('Upload response:', result);
+        
+        if (result.data) {
             displayRawData(result.data);
             document.getElementById('process-section').style.display = 'block';
             currentData = result.data;
             originalText = result.data;
+            console.log('File uploaded successfully:', result.data);
         } else {
-            alert(result.error);
+            throw new Error('No data received from server');
         }
     } catch (error) {
         console.error('Error:', error);
+        alert('Error uploading file: ' + error.message);
     }
 }
 
@@ -80,50 +152,62 @@ async function augmentData() {
     }
 
     const options = {
-        synonym_replacement: document.getElementById('synonym-replace')?.checked || false,
-        mlm_replacement: document.getElementById('mlm-replace')?.checked || false,
-        random_insertion: document.getElementById('random-insert')?.checked || false,
-        random_deletion: document.getElementById('random-delete')?.checked || false
+        synonym_replacement: {
+            enabled: document.getElementById('synonym-replace')?.checked || false,
+            n_words: parseInt(document.getElementById('synonym-n-words')?.value || '3')
+        },
+        mlm_replacement: {
+            enabled: document.getElementById('mlm-replace')?.checked || false,
+            n_words: parseInt(document.getElementById('mlm-n-words')?.value || '3')
+        },
+        random_insertion: {
+            enabled: document.getElementById('random-insert')?.checked || false,
+            n_words: parseInt(document.getElementById('random-insert-n-words')?.value || '3')
+        },
+        random_deletion: {
+            enabled: document.getElementById('random-delete')?.checked || false,
+            n_words: parseInt(document.getElementById('random-delete-n-words')?.value || '2')
+        }
     };
 
     try {
-        console.log('Sending data for augmentation:', currentData); // Debug log
-        
-        console.log('Selected options:', options); // Debug log
-
         const response = await fetch('/augment', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                data: originalText,
+                text: originalText,
                 options: options
-            }),
+            })
         });
-        
+
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        console.log('Received augmented data:', result);
-        
-        if (result.error) {
-            throw new Error(result.error);
-        }
-        
         displayAugmentedData(result);
-        currentData = result;
+        console.log('Augmentation result:', result);
     } catch (error) {
-        console.error('Error in augmentation:', error);
+        console.error('Error:', error);
         alert('Error augmenting data: ' + error.message);
     }
 }
 
 function displayRawData(data) {
-    document.getElementById('data-container').innerText = data;
+    console.log('Displaying raw data:', data);
+    const container = document.getElementById('data-container');
+    
+    // Create raw data section
+    const rawDataHtml = `
+        <div class="raw-data-container">
+            <h3>Raw Text</h3>
+            <div class="raw-text">${data}</div>
+        </div>
+    `;
+    
+    container.innerHTML = rawDataHtml;
 }
 
 function displayTableData(data) {
@@ -221,8 +305,8 @@ function setActiveTab(activeButton) {
 }
 
 function displayPreprocessingSteps(container, steps) {
-    if (!steps) {
-        container.textContent = 'No preprocessing steps available';
+    if (!steps || Object.keys(steps).length === 0) {
+        container.textContent = 'No preprocessing steps were applied';
         return;
     }
     
@@ -240,19 +324,19 @@ function displayPreprocessingSteps(container, steps) {
     // Create HTML for steps in the correct order
     const stepsHtml = stepOrder
         .filter(step => steps[step])
-        .map(step => {
-            // Escape < and > characters in the step value
-            const escapedValue = steps[step].replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        .map((step, index, filteredSteps) => {
+           // Escape < and > characters in the step value
+           const escapedValue = steps[step].replace(/</g, '&lt;').replace(/>/g, '&gt;');
             return `
-                <div class="preprocessing-step">
-                    <h4>${step}</h4>
-                    <p>${escapedValue}</p>
-                </div>
-            `;
-        })
+            <div class="preprocessing-step">
+                <h4 class="step-title">${step}</h4>
+                <p class="step-content">${escapedValue}</p>
+            </div>
+            ${index < filteredSteps.length - 1 ? '<div class="step-arrow"></div>' : ''}
+        `})
         .join('');
     
-    container.innerHTML = stepsHtml || 'No preprocessing steps were applied';
+    container.innerHTML = stepsHtml;
 }
 
 function displayAugmentedData(data) {
@@ -271,15 +355,11 @@ function displayAugmentedData(data) {
     stepsButton.textContent = 'Augmentation Steps';
     stepsButton.className = 'active';
     
-    const tokensButton = document.createElement('button');
-    tokensButton.textContent = 'Tokens';
-    
-    const tokenIdsButton = document.createElement('button');
-    tokenIdsButton.textContent = 'Token IDs';
+    const resultButton = document.createElement('button');
+    resultButton.textContent = 'Final Result';
     
     tabButtons.appendChild(stepsButton);
-    tabButtons.appendChild(tokensButton);
-    tabButtons.appendChild(tokenIdsButton);
+    tabButtons.appendChild(resultButton);
     
     // Create tab content
     const tabContent = document.createElement('div');
@@ -294,14 +374,9 @@ function displayAugmentedData(data) {
         displayAugmentationSteps(tabContent, data.augmentation_steps);
     };
     
-    tokensButton.onclick = () => {
-        setActiveTab(tokensButton);
-        tabContent.textContent = Array.isArray(data.tokens) ? data.tokens.join(' ') : 'No tokens available';
-    };
-    
-    tokenIdsButton.onclick = () => {
-        setActiveTab(tokenIdsButton);
-        tabContent.textContent = Array.isArray(data.token_ids) ? data.token_ids.join(' ') : 'No token IDs available';
+    resultButton.onclick = () => {
+        setActiveTab(resultButton);
+        displayFinalResult(tabContent, data.augmented_text);
     };
     
     tabContainer.appendChild(tabButtons);
@@ -317,17 +392,100 @@ function displayAugmentationSteps(container, steps) {
         return;
     }
     
-    const stepsHtml = Object.entries(steps)
-        .map(([step, data]) => `
-            <div class="augmentation-step">
-                <h4>${step}</h4>
-                <p><strong>Result:</strong> ${data.text}</p>
-                <p><strong>Details:</strong> ${data.details.join(', ')}</p>
-            </div>
-        `)
+    const stepOrder = [
+        'Synonym Replacement',
+        'Word Replacement',
+        'Random Insertion',
+        'Random Deletion'
+    ];
+    
+    console.log('All steps:', steps);  // Debug log
+    
+    const stepsHtml = stepOrder
+        .filter(stepName => steps[stepName])
+        .map((stepName, index, filteredSteps) => {
+            const data = steps[stepName];
+            console.log(`Step ${stepName}:`, data);  // Debug log
+            console.log('Changes:', data.changes);   // Debug log
+            
+            const highlightedText = highlightChanges(data.text, data.changes, stepName);
+            
+            return `
+                <div class="augmentation-step">
+                    <h4 class="step-title">${stepName}</h4>
+                    <div class="step-content">${highlightedText}</div>
+                    <div class="debug-info" style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                        Positions: ${JSON.stringify(data.changes.positions)}<br>
+                        ${data.changes.old_words ? `Old words: ${JSON.stringify(data.changes.old_words)}<br>` : ''}
+                        ${data.changes.new_words ? `New words: ${JSON.stringify(data.changes.new_words)}<br>` : ''}
+                        ${data.changes.deleted_words ? `Deleted words: ${JSON.stringify(data.changes.deleted_words)}` : ''}
+                    </div>
+                </div>
+                ${index < filteredSteps.length - 1 ? '<div class="step-arrow"></div>' : ''}
+            `;
+        })
         .join('');
     
     container.innerHTML = stepsHtml;
+}
+
+function highlightChanges(text, changes, stepType) {
+    console.log(`Highlighting ${stepType}:`, {text, changes});  // Debug log
+    
+    const words = text.split(' ');
+    console.log('Words array:', words);  // Debug log
+    
+    // Create a map of positions to highlight
+    const highlightMap = new Map();
+    
+    if (stepType === 'Random Deletion') {
+        // For deletion, we don't highlight anything as words are removed
+        return text;
+    } 
+    else if (stepType === 'Random Insertion') {
+        changes.positions.forEach((pos, idx) => {
+            highlightMap.set(pos, {
+                word: changes.new_words[idx],
+                type: 'insert'
+            });
+        });
+    }
+    else {
+        // For synonym and word replacement
+        changes.positions.forEach((pos, idx) => {
+            highlightMap.set(pos, {
+                word: changes.new_words[idx],
+                oldWord: changes.old_words[idx],
+                type: 'replace'
+            });
+        });
+    }
+    
+    console.log('Highlight map:', Object.fromEntries(highlightMap));  // Debug log
+    
+    // Build highlighted text
+    const highlightedWords = words.map((word, index) => {
+        const highlight = highlightMap.get(index);
+        if (highlight) {
+            console.log(`Highlighting word at position ${index}:`, {word, highlight});  // Debug log
+            if (highlight.type === 'insert') {
+                return `<mark class="highlight-insert" title="Inserted word">${word}</mark>`;
+            } else {
+                return `<mark class="highlight-change" title="Changed from '${highlight.oldWord}'">${word}</mark>`;
+            }
+        }
+        return word;
+    });
+    
+    return highlightedWords.join(' ');
+}
+
+function displayFinalResult(container, text) {
+    container.innerHTML = `
+        <div class="final-result">
+            <p>${text}</p>
+        </div>
+    `;
 }
 
 function setActiveTab(activeButton) {

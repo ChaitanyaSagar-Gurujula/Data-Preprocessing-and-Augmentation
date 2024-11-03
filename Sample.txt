@@ -1,1 +1,1 @@
-This is session 3 Assignment in ERA V3 Course.
+Session 3 is on data preprocessing and augmentation for various data like text, images, audio and 3d images. Assignment is given to build an api which gets a file and based on the type of files, we need to display various types of preprocessing and augmentation details.

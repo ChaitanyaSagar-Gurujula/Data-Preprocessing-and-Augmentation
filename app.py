@@ -12,16 +12,19 @@ def index():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
-def upload():
+def upload_file():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
+    
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
+    
     if file:
         content = file.read().decode('utf-8')
-        # Store the raw content instead of converting to HTML
         return jsonify({'data': content})
+    
+    return jsonify({'error': 'Error processing file'}), 400
 
 @app.route('/preprocess', methods=['POST'])
 def preprocess():
@@ -35,27 +38,30 @@ def preprocess():
     return jsonify(result)
 
 @app.route('/augment', methods=['POST'])
-def augment():
-    try:
-        data = request.json
-        if not data or 'data' not in data or 'options' not in data:
-            return jsonify({'error': 'Invalid request data'}), 400
-            
-        content = data['data']
-        options = data['options']
-        
-        # If content is a dictionary (from preprocessing), get the tokens
-        if isinstance(content, dict) and 'tokens' in content:
-            text = ' '.join(content['tokens'])
-        else:
-            text = str(content)
-        
-        result = augmenter.augment(text, options)
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"Error in augmentation: {str(e)}")  # Debug print
-        return jsonify({'error': str(e)}), 500
+def augment_text():
+    data = request.json
+    text = data.get('text', '')
+    options = data.get('options', {})
+    
+    # Convert options format
+    processed_options = {
+        'synonym_replacement': options.get('synonym_replacement', {}).get('enabled', False),
+        'mlm_replacement': options.get('mlm_replacement', {}).get('enabled', False),
+        'random_insertion': options.get('random_insertion', {}).get('enabled', False),
+        'random_deletion': options.get('random_deletion', {}).get('enabled', False)
+    }
+    
+    # Get n_words for each method
+    n_words = {
+        'synonym_replacement': options.get('synonym_replacement', {}).get('n_words', 3),
+        'mlm_replacement': options.get('mlm_replacement', {}).get('n_words', 3),
+        'random_insertion': options.get('random_insertion', {}).get('n_words', 3),
+        'random_deletion': options.get('random_deletion', {}).get('n_words', 2)
+    }
+    
+    augmenter = TextAugmenter()
+    result = augmenter.augment(text, processed_options, n_words)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True)
