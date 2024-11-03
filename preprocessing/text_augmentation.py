@@ -1,5 +1,11 @@
 from transformers import pipeline
 import random
+from nltk.corpus import wordnet
+import nltk
+
+# Download required NLTK data
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
 
 class TextAugmenter:
     def __init__(self):
@@ -93,6 +99,45 @@ class TextAugmenter:
         augmented_text = ' '.join(words)
         return augmented_text, [f"Replaced '{original_word}' with '{replacement}'"]
         
+    def get_wordnet_pos(self, word):
+        """Map POS tag to first character lemmatize() accepts"""
+        tag = nltk.pos_tag([word])[0][1][0].upper()
+        tag_dict = {"J": wordnet.ADJ,
+                   "N": wordnet.NOUN,
+                   "V": wordnet.VERB,
+                   "R": wordnet.ADV}
+        return tag_dict.get(tag, wordnet.NOUN)
+
+    def get_synonyms(self, word):
+        """Get synonyms for a word"""
+        synonyms = []
+        for syn in wordnet.synsets(word):
+            for lemma in syn.lemmas():
+                if lemma.name().lower() != word.lower():  # Don't include the word itself
+                    synonyms.append(lemma.name())
+        return list(set(synonyms))  # Remove duplicates
+
+    def synonym_replacement(self, text):
+        """Replace random word with its synonym"""
+        words = text.split()
+        if not words:
+            return text, []
+
+        # Try to find a word with synonyms
+        random.shuffle(words)  # Shuffle to try different words
+        for idx, word in enumerate(words):
+            if word in ['<PAD>', '[MASK]']:  # Skip special tokens
+                continue
+                
+            synonyms = self.get_synonyms(word)
+            if synonyms:  # If synonyms found
+                original_word = words[idx]
+                words[idx] = random.choice(synonyms)
+                augmented_text = ' '.join(words)
+                return augmented_text, [f"Replaced '{original_word}' with its synonym '{words[idx]}'"]
+        
+        return text, ["No suitable words found for synonym replacement"]
+
     def augment(self, text, options):
         """Apply selected augmentation techniques"""
         steps = {}
@@ -103,6 +148,13 @@ class TextAugmenter:
         if isinstance(text, dict) and 'tokens' in text:
             augmented_text = ' '.join(text['tokens'])
         
+        if options.get('synonym_replacement'):
+            augmented_text, details = self.synonym_replacement(augmented_text)
+            steps['Synonym Replacement'] = {
+                'text': augmented_text,
+                'details': details
+            }
+            
         if options.get('mlm_replacement'):
             augmented_text, details = self.word_replacement_mlm(text)
             full_augmented_text, _ = self.word_replacement_mlm(full_augmented_text)

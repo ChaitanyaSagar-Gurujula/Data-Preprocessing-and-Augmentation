@@ -79,15 +79,16 @@ async function augmentData() {
         return;
     }
 
+    const options = {
+        synonym_replacement: document.getElementById('synonym-replace')?.checked || false,
+        mlm_replacement: document.getElementById('mlm-replace')?.checked || false,
+        random_insertion: document.getElementById('random-insert')?.checked || false,
+        random_deletion: document.getElementById('random-delete')?.checked || false
+    };
+
     try {
         console.log('Sending data for augmentation:', currentData); // Debug log
         
-        const options = {
-            mlm_replacement: document.getElementById('mlm-replace')?.checked || false,
-            random_insertion: document.getElementById('random-insert')?.checked || false,
-            random_deletion: document.getElementById('random-delete')?.checked || false
-        };
-
         console.log('Selected options:', options); // Debug log
 
         const response = await fetch('/augment', {
