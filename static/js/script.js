@@ -294,33 +294,21 @@ function createPreprocessingStepsHtml(data) {
             .join('');
     }
     
-    // Display tokens
-    if (data.tokens) {
+    // Add arrow after the last preprocessing step
+    if (data.preprocessing_steps && Object.keys(data.preprocessing_steps).length > 0) {
+        html += '<div class="step-arrow"></div>';
+    }
+    
+    // Display tokens with their IDs
+    if (data.tokens && data.token_ids) {
         html += `
             <div class="preprocessing-step">
-                <h4 class="step-title">Tokens</h4>
+                <h4 class="step-title">Tokens and IDs</h4>
                 <div class="step-content tokens-display">
                     ${data.tokens.map((token, index) => `
                         <span class="token">
                             <span class="token-text">${token.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
-                            <span class="token-index">${index}</span>
-                        </span>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-    
-    // Display token IDs
-    if (data.token_ids) {
-        html += `
-            <div class="preprocessing-step">
-                <h4 class="step-title">Token IDs</h4>
-                <div class="step-content tokens-display">
-                    ${data.token_ids.map((id, index) => `
-                        <span class="token">
-                            <span class="token-text">${id}</span>
-                            <span class="token-index">${index}</span>
+                            <span class="token-id">${data.token_ids[index]}</span>
                         </span>
                     `).join('')}
                 </div>
