@@ -309,7 +309,7 @@ function createPreprocessingStepsHtml(data) {
     
     // Add arrow after the last preprocessing step
     if (data.preprocessing_steps && Object.keys(data.preprocessing_steps).length > 0) {
-        html += '<div class="step-arrow">→</div>';
+        html += '<div class="step-arrow"></div>';
     }
     
     // Display tokens with their IDs and colors
