@@ -1,11 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 from preprocessing.text_preprocessing import TextPreprocessor
 from preprocessing.text_augmentation import TextAugmenter
+from preprocessing.image_preprocessing import ImagePreprocessor
+from preprocessing.image_augmentation import ImageAugmenter
 
 app = Flask(__name__)
 
 preprocessor = TextPreprocessor()
 augmenter = TextAugmenter()  # Initialize the augmenter
+
+# Initialize processors
+image_preprocessor = ImagePreprocessor()
+image_augmenter = ImageAugmenter()
 
 @app.route('/')
 def index():
@@ -62,6 +68,30 @@ def augment_text():
     augmenter = TextAugmenter()
     result = augmenter.augment(text, processed_options, n_words)
     return jsonify(result)
+
+@app.route('/preprocess-image', methods=['POST'])
+def preprocess_image():
+    try:
+        data = request.json
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image data provided'}), 400
+            
+        result = image_preprocessor.preprocess(data['image'], data['options'])
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/augment-image', methods=['POST'])
+def augment_image():
+    try:
+        data = request.json
+        if not data or 'image' not in data:
+            return jsonify({'error': 'No image data provided'}), 400
+            
+        result = image_augmenter.augment(data['image'], data['options'])
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

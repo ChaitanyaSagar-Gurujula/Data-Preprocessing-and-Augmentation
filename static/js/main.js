@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (augmentBtn) {
         augmentBtn.addEventListener('click', () => TextProcessor.augment());
     }
+    
+    // Initialize new components
+    TabManager.initialize();
+    ImageHandler.initialize();
 });
 
 // Define global functions for backward compatibility

@@ -1,28 +1,29 @@
 class ImageProcessor {
     static async preprocess() {
+        const imageData = DataManager.getOriginalImage();
+        if (!imageData) {
+            console.log('No image available');
+            return;
+        }
+
+        const options = {
+            resize: document.getElementById('resize')?.checked || false,
+            resize_width: document.getElementById('resize-width')?.value,
+            resize_height: document.getElementById('resize-height')?.value,
+            normalize: document.getElementById('normalize')?.checked || false,
+            grayscale: document.getElementById('grayscale')?.checked || false,
+            blur: document.getElementById('blur')?.checked || false,
+            blur_kernel: document.getElementById('blur-kernel')?.value
+        };
+
         try {
-            const options = {
-                resize: document.getElementById('resize').checked,
-                resize_width: document.getElementById('resize-width').value,
-                resize_height: document.getElementById('resize-height').value,
-                normalize: document.getElementById('normalize').checked,
-                grayscale: document.getElementById('grayscale').checked,
-                crop: document.getElementById('crop').checked
-            };
-
-            const currentData = DataManager.getCurrentData();
-            if (!currentData) {
-                alert('Please upload an image first');
-                return;
-            }
-
-            const response = await fetch('/preprocess_image', {
+            const response = await fetch('/preprocess-image', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    image: currentData,
+                    image: imageData,
                     options: options
                 })
             });
@@ -32,46 +33,47 @@ class ImageProcessor {
             }
 
             const result = await response.json();
-            DisplayManager.displayPreprocessedData(result);
-            console.log('Preprocessing complete:', result);
-
+            ImageDisplayManager.displayPreprocessedImage(result);
         } catch (error) {
-            console.error('Error during preprocessing:', error);
-            alert('Error during preprocessing: ' + error.message);
+            console.error('Error:', error);
+            alert('Error preprocessing image: ' + error.message);
         }
     }
 
     static async augment() {
-        try {
-            const options = {
-                rotate: {
-                    enabled: document.getElementById('rotate').checked,
-                    degree: document.getElementById('rotation-degree').value
-                },
-                flip: document.getElementById('flip').checked,
-                brightness: {
-                    enabled: document.getElementById('brightness').checked,
-                    factor: document.getElementById('brightness-factor').value
-                },
-                contrast: {
-                    enabled: document.getElementById('contrast').checked,
-                    factor: document.getElementById('contrast-factor').value
-                }
-            };
+        const imageData = DataManager.getOriginalImage();
+        if (!imageData) {
+            console.log('No image available');
+            return;
+        }
 
-            const currentData = DataManager.getCurrentData();
-            if (!currentData) {
-                alert('Please upload an image first');
-                return;
+        const options = {
+            rotation: {
+                enabled: document.getElementById('rotation')?.checked || false,
+                angle: document.getElementById('rotation-angle')?.value
+            },
+            flip: {
+                enabled: document.getElementById('flip')?.checked || false,
+                direction: document.getElementById('flip-direction')?.value
+            },
+            brightness: {
+                enabled: document.getElementById('brightness')?.checked || false,
+                factor: document.getElementById('brightness-factor')?.value
+            },
+            noise: {
+                enabled: document.getElementById('noise')?.checked || false,
+                level: document.getElementById('noise-level')?.value
             }
+        };
 
-            const response = await fetch('/augment_image', {
+        try {
+            const response = await fetch('/augment-image', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    image: currentData,
+                    image: imageData,
                     options: options
                 })
             });
@@ -81,12 +83,10 @@ class ImageProcessor {
             }
 
             const result = await response.json();
-            DisplayManager.displayAugmentedData(result);
-            console.log('Augmentation complete:', result);
-
+            ImageDisplayManager.displayAugmentedImage(result);
         } catch (error) {
-            console.error('Error during augmentation:', error);
-            alert('Error during augmentation: ' + error.message);
+            console.error('Error:', error);
+            alert('Error augmenting image: ' + error.message);
         }
     }
 } 

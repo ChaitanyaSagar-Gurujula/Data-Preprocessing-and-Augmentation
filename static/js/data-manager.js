@@ -1,6 +1,7 @@
 class DataManager {
     static currentData = null;
     static originalText = null;
+    static originalImage = null;
 
     static setCurrentData(data) {
         this.currentData = data;
@@ -16,5 +17,13 @@ class DataManager {
 
     static getOriginalText() {
         return this.originalText;
+    }
+
+    static setOriginalImage(imageData) {
+        this.originalImage = imageData;
+    }
+
+    static getOriginalImage() {
+        return this.originalImage;
     }
 } 
