@@ -113,8 +113,9 @@ async function preprocessData() {
     const options = {
         case_normalization: document.getElementById('case-norm')?.checked || false,
         punctuation_removal: document.getElementById('punct-removal')?.checked || false,
-        stopword_removal: document.getElementById('stopword-removal')?.checked || false,
-        padding: document.getElementById('padding')?.checked || false
+        stop_word_removal: document.getElementById('stopword-removal')?.checked || false,
+        padding: document.getElementById('padding')?.checked || false,
+        padding_length: parseInt(document.getElementById('padding-length')?.value || '20')
     };
 
     try {
@@ -126,21 +127,17 @@ async function preprocessData() {
             body: JSON.stringify({
                 data: originalText,
                 options: options
-            }),
+            })
         });
-        
+
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const result = await response.json();
-        console.log('Received preprocessed data:', result);
-        
         displayPreprocessedData(result);
-        currentData = result;
     } catch (error) {
-        console.error('Error in preprocessing:', error);
+        console.error('Error:', error);
         alert('Error preprocessing data: ' + error.message);
     }
 }

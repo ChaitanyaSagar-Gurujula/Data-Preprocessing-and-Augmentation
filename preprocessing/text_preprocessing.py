@@ -4,7 +4,6 @@ import string
 class TextPreprocessor:
     def __init__(self):
         self.tokenizer = get_tokenizer('basic_english')
-        self.max_length = 20  # Set constant padding length
         # Common English stop words
         self.stop_words = set(['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
                              'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 
@@ -20,15 +19,18 @@ class TextPreprocessor:
                              'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 
                              'again', 'further', 'then', 'once'])
 
-    def pad_sequence(self, sequence, pad_value=0):
-        """Pad or truncate sequence to max_length"""
-        if len(sequence) > self.max_length:
-            return sequence[:self.max_length]  # Truncate
-        return sequence + [pad_value] * (self.max_length - len(sequence))  # Pad with zeros
+    def pad_sequence(self, sequence, max_length, pad_value=0):
+        """Pad or truncate sequence to specified length"""
+        if len(sequence) > max_length:
+            return sequence[:max_length]  # Truncate
+        return sequence + [pad_value] * (max_length - len(sequence))  # Pad with zeros
 
     def preprocess(self, text, options):
         steps = {}
         processed_text = text
+        
+        # Get padding length from options
+        padding_length = options.get('padding_length', 20)  # Default to 20 if not specified
         
         # Text-level preprocessing
         # Case normalization
@@ -54,8 +56,8 @@ class TextPreprocessor:
 
         # Padding (if selected)
         if options.get('padding'):
-            words = self.pad_sequence(words, pad_value='<PAD>') 
-            token_ids = self.pad_sequence(token_ids, pad_value=0)
+            words = self.pad_sequence(words, padding_length, pad_value='<PAD>') 
+            token_ids = self.pad_sequence(token_ids, padding_length, pad_value=0)
             steps['Padding'] = ' '.join(words)
 
         print(steps)
