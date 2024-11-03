@@ -265,6 +265,22 @@ function createPreprocessingStepsHtml(data) {
         return 'No preprocessing steps were applied';
     }
     
+    // Function to generate HSL color with fixed saturation and lightness
+    const generateColor = (index, totalTokens) => {
+        const hue = (index * 137.508) % 360; // Use golden angle approximation
+        return `hsl(${hue}, 75%, 95%)`; // High lightness for pastel colors
+    };
+    
+    // Create a color mapping for unique tokens
+    const tokenColorMap = new Map();
+    const uniqueTokens = [...new Set(data.tokens)];
+    uniqueTokens.forEach((token, index) => {
+        tokenColorMap.set(token, generateColor(index, uniqueTokens.length));
+    });
+
+    // Special color for padding token
+    tokenColorMap.set('<PAD>', '#f0f0f0');  // Light gray for padding
+    
     let html = '';
     
     // Display preprocessing steps
@@ -293,17 +309,17 @@ function createPreprocessingStepsHtml(data) {
     
     // Add arrow after the last preprocessing step
     if (data.preprocessing_steps && Object.keys(data.preprocessing_steps).length > 0) {
-        html += '<div class="step-arrow"></div>';
+        html += '<div class="step-arrow">→</div>';
     }
     
-    // Display tokens with their IDs
+    // Display tokens with their IDs and colors
     if (data.tokens && data.token_ids) {
         html += `
             <div class="preprocessing-step">
                 <h4 class="step-title">Tokens and IDs</h4>
                 <div class="step-content tokens-display">
                     ${data.tokens.map((token, index) => `
-                        <span class="token">
+                        <span class="token" style="background-color: ${tokenColorMap.get(token)}">
                             <span class="token-text">${token.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
                             <span class="token-id">${data.token_ids[index]}</span>
                         </span>

@@ -465,23 +465,31 @@
             flex-direction: column;
             align-items: center;
             padding: 8px;
-            background-color: white;
-            border: 1px solid #e9ecef;
+            border: 1px solid rgba(0,0,0,0.1);
             border-radius: 4px;
             font-family: monospace;
             min-width: 40px;
             text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .token:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .token-text {
             color: #2c3e50;
             margin-bottom: 4px;
+            font-weight: 500;
         }
 
         .token-id {
             font-size: 0.8em;
-            color: #6c757d;
-            font-weight: 500;
+            color: #555;
+            background-color: rgba(255,255,255,0.5);
+            padding: 2px 6px;
+            border-radius: 3px;
         }
 
         /* Make tokens scrollable horizontally on small screens */

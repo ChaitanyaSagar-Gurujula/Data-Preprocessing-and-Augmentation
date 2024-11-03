@@ -18,12 +18,23 @@ class TextPreprocessor:
                              'through', 'during', 'before', 'after', 'above', 'below', 'to', 
                              'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 
                              'again', 'further', 'then', 'once'])
+        self.vocab = {}  # Dictionary to store word-to-id mapping
+        self.next_id = 100  # Start token IDs from 1 (reserve 0 for padding)
 
     def pad_sequence(self, sequence, max_length, pad_value=0):
         """Pad or truncate sequence to specified length"""
         if len(sequence) > max_length:
             return sequence[:max_length]  # Truncate
         return sequence + [pad_value] * (max_length - len(sequence))  # Pad with zeros
+
+    def get_token_id(self, token):
+        """Get or create unique token ID"""
+        if token == '<PAD>':
+            return 0
+        if token not in self.vocab:
+            self.vocab[token] = self.next_id
+            self.next_id += 1
+        return self.vocab[token]
 
     def preprocess(self, text, options):
         steps = {}
@@ -51,8 +62,8 @@ class TextPreprocessor:
             words = [word for word in words if word.lower() not in self.stop_words]
             steps['Stop Word Removal'] = ' '.join(words)
         
-        # Generate token IDs
-        token_ids = [ord(word[0]) if word else 0 for word in words]
+        # Generate unique token IDs
+        token_ids = [self.get_token_id(word) for word in words]
 
         # Padding (if selected)
         if options.get('padding'):
@@ -60,8 +71,6 @@ class TextPreprocessor:
             token_ids = self.pad_sequence(token_ids, padding_length, pad_value=0)
             steps['Padding'] = ' '.join(words)
 
-        print(steps)
-        
         return {
             'preprocessing_steps': steps,
             'tokens': words,
