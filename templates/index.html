@@ -582,14 +582,18 @@
             </div>
 
             <div class="action-buttons">
-                <button class="action-btn preprocess-btn" onclick="preprocessData()">Preprocess Data</button>
-                <button class="action-btn augment-btn" onclick="augmentData()">Augment Data</button>
+                <button class="action-btn preprocess-btn">Preprocess Data</button>
+                <button class="action-btn augment-btn">Augment Data</button>
             </div>
         </div>
 
         <div id="data-container"></div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/data-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/display-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processors/text-processor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/upload-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

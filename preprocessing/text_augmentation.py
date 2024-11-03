@@ -236,7 +236,8 @@ class TextAugmenter:
                 'text': augmented_text,
                 'changes': changes
             }
-            
+        
+        print(steps)
         return {
             'augmentation_steps': steps,
             'augmented_text': augmented_text
