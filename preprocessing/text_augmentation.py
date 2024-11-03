@@ -65,16 +65,31 @@ class TextAugmenter:
         if not insertable_words:
             return text, changes
         
+        # Sort positions in ascending order to track shifts
+        insert_positions = []
         for _ in range(n_words):
-            word_to_insert = random.choice(insertable_words)
             position = random.randint(0, len(words))
+            insert_positions.append(position)
+        
+        # Sort positions to handle shifts correctly
+        insert_positions.sort()
+        
+        # Track position shifts
+        position_shift = 0
+        
+        for pos in insert_positions:
+            word_to_insert = random.choice(insertable_words)
+            actual_position = pos + position_shift
             
             # Insert word
-            words.insert(position, word_to_insert)
+            words.insert(actual_position, word_to_insert)
             
-            # Track changes
-            changes['positions'].append(position)
+            # Track changes with original position
+            changes['positions'].append(actual_position)
             changes['new_words'].append(word_to_insert)
+            
+            # Increment shift for next insertion
+            position_shift += 1
         
         return ' '.join(words), changes
         

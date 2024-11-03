@@ -245,151 +245,117 @@ function displayPreprocessedData(data) {
     console.log('Displaying preprocessed data:', data);
     const container = document.getElementById('data-container');
     
-    // Create tab container
-    const tabContainer = document.createElement('div');
-    tabContainer.className = 'tab-container';
+    const splitView = `
+        <div class="split-view">
+            <div class="original-panel">
+                <div class="panel-title">Original Text</div>
+                <div class="panel-content">${originalText}</div>
+            </div>
+            <div class="processed-panel">
+                <div class="panel-title">Preprocessing Results</div>
+                <div class="preprocessing-steps">
+                    ${createPreprocessingStepsHtml(data)}
+                </div>
+            </div>
+        </div>
+    `;
     
-    // Create tab buttons
-    const tabButtons = document.createElement('div');
-    tabButtons.className = 'tab-buttons';
-    
-    // Add tabs for preprocessing steps and final tokens
-    const preprocessingButton = document.createElement('button');
-    preprocessingButton.textContent = 'Preprocessing Steps';
-    preprocessingButton.className = 'active';
-    
-    const tokensButton = document.createElement('button');
-    tokensButton.textContent = 'Final Tokens';
-    
-    const tokenIdsButton = document.createElement('button');
-    tokenIdsButton.textContent = 'Token IDs';
-    
-    tabButtons.appendChild(preprocessingButton);
-    tabButtons.appendChild(tokensButton);
-    tabButtons.appendChild(tokenIdsButton);
-    
-    // Create tab content
-    const tabContent = document.createElement('div');
-    tabContent.className = 'tab-content';
-    
-    // Initial display of preprocessing steps
-    displayPreprocessingSteps(tabContent, data.preprocessing_steps);
-    
-    // Add click handlers for tabs
-    preprocessingButton.onclick = () => {
-        setActiveTab(preprocessingButton);
-        displayPreprocessingSteps(tabContent, data.preprocessing_steps);
-    };
-    
-    tokensButton.onclick = () => {
-        setActiveTab(tokensButton);
-        tabContent.textContent = Array.isArray(data.tokens) ? data.tokens.join(' ') : 'No tokens available';
-    };
-    
-    tokenIdsButton.onclick = () => {
-        setActiveTab(tokenIdsButton);
-        tabContent.textContent = Array.isArray(data.token_ids) ? data.token_ids.join(' ') : 'No token IDs available';
-    };
-    
-    tabContainer.appendChild(tabButtons);
-    tabContainer.appendChild(tabContent);
-    
-    container.innerHTML = '';
-    container.appendChild(tabContainer);
+    container.innerHTML = splitView;
 }
 
-function setActiveTab(activeButton) {
-    const buttons = activeButton.parentElement.getElementsByTagName('button');
-    Array.from(buttons).forEach(button => button.className = '');
-    activeButton.className = 'active';
-}
-
-function displayPreprocessingSteps(container, steps) {
-    if (!steps || Object.keys(steps).length === 0) {
-        container.textContent = 'No preprocessing steps were applied';
-        return;
+function createPreprocessingStepsHtml(data) {
+    if (!data || Object.keys(data).length === 0) {
+        return 'No preprocessing steps were applied';
     }
     
-    // Define the order of steps
+    let html = '';
+    
+    // Display preprocessing steps
     const stepOrder = [
         'Case Normalization',
         'Punctuation Removal',
-        'Tokenization',
         'Stop Word Removal',
         'Padding'
     ];
     
-    console.log('Steps received:', steps);  // Add this debug line
+    if (data.preprocessing_steps) {
+        html += stepOrder
+            .filter(step => data.preprocessing_steps[step])
+            .map((step, index, filteredSteps) => {
+                const escapedValue = data.preprocessing_steps[step].replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `
+                    <div class="preprocessing-step">
+                        <h4 class="step-title">${step}</h4>
+                        <div class="step-content">${escapedValue}</div>
+                    </div>
+                    ${index < filteredSteps.length - 1 ? '<div class="step-arrow"></div>' : ''}
+                `;
+            })
+            .join('');
+    }
     
-    // Create HTML for steps in the correct order
-    const stepsHtml = stepOrder
-        .filter(step => steps[step])
-        .map((step, index, filteredSteps) => {
-           // Escape < and > characters in the step value
-           const escapedValue = steps[step].replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `
+    // Display tokens
+    if (data.tokens) {
+        html += `
             <div class="preprocessing-step">
-                <h4 class="step-title">${step}</h4>
-                <p class="step-content">${escapedValue}</p>
+                <h4 class="step-title">Tokens</h4>
+                <div class="step-content tokens-display">
+                    ${data.tokens.map((token, index) => `
+                        <span class="token">
+                            <span class="token-text">${token.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+                            <span class="token-index">${index}</span>
+                        </span>
+                    `).join('')}
+                </div>
             </div>
-            ${index < filteredSteps.length - 1 ? '<div class="step-arrow"></div>' : ''}
-        `})
-        .join('');
+        `;
+    }
     
-    container.innerHTML = stepsHtml;
+    // Display token IDs
+    if (data.token_ids) {
+        html += `
+            <div class="preprocessing-step">
+                <h4 class="step-title">Token IDs</h4>
+                <div class="step-content tokens-display">
+                    ${data.token_ids.map((id, index) => `
+                        <span class="token">
+                            <span class="token-text">${id}</span>
+                            <span class="token-index">${index}</span>
+                        </span>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    return html;
 }
 
 function displayAugmentedData(data) {
     console.log('Displaying augmented data:', data);
     const container = document.getElementById('data-container');
     
-    // Create tab container
-    const tabContainer = document.createElement('div');
-    tabContainer.className = 'tab-container';
+    const splitView = `
+        <div class="split-view">
+            <div class="original-panel">
+                <div class="panel-title">Original Text</div>
+                <div class="panel-content">${originalText}</div>
+            </div>
+            <div class="processed-panel">
+                <div class="panel-title">Augmentation Steps</div>
+                <div class="augmentation-steps">
+                    ${createAugmentationStepsHtml(data.augmentation_steps)}
+                </div>
+            </div>
+        </div>
+    `;
     
-    // Create tab buttons
-    const tabButtons = document.createElement('div');
-    tabButtons.className = 'tab-buttons';
-    
-    const stepsButton = document.createElement('button');
-    stepsButton.textContent = 'Augmentation Steps';
-    stepsButton.className = 'active';
-    
-    const resultButton = document.createElement('button');
-    resultButton.textContent = 'Final Result';
-    
-    tabButtons.appendChild(stepsButton);
-    tabButtons.appendChild(resultButton);
-    
-    // Create tab content
-    const tabContent = document.createElement('div');
-    tabContent.className = 'tab-content';
-    
-    // Initial display of augmentation steps
-    displayAugmentationSteps(tabContent, data.augmentation_steps);
-    
-    // Add click handlers for tabs
-    stepsButton.onclick = () => {
-        setActiveTab(stepsButton);
-        displayAugmentationSteps(tabContent, data.augmentation_steps);
-    };
-    
-    resultButton.onclick = () => {
-        setActiveTab(resultButton);
-        displayFinalResult(tabContent, data.augmented_text);
-    };
-    
-    tabContainer.appendChild(tabButtons);
-    tabContainer.appendChild(tabContent);
-    
-    container.innerHTML = '';
-    container.appendChild(tabContainer);
+    container.innerHTML = splitView;
 }
 
-function displayAugmentationSteps(container, steps) {
+function createAugmentationStepsHtml(steps) {
     if (!steps || Object.keys(steps).length === 0) {
-        container.textContent = 'No augmentation steps were applied';
-        return;
+        return 'No augmentation steps were applied';
     }
     
     const stepOrder = [
@@ -399,34 +365,27 @@ function displayAugmentationSteps(container, steps) {
         'Random Deletion'
     ];
     
-    console.log('All steps:', steps);  // Debug log
-    
-    const stepsHtml = stepOrder
+    return stepOrder
         .filter(stepName => steps[stepName])
         .map((stepName, index, filteredSteps) => {
             const data = steps[stepName];
-            console.log(`Step ${stepName}:`, data);  // Debug log
-            console.log('Changes:', data.changes);   // Debug log
-            
             const highlightedText = highlightChanges(data.text, data.changes, stepName);
             
             return `
                 <div class="augmentation-step">
                     <h4 class="step-title">${stepName}</h4>
                     <div class="step-content">${highlightedText}</div>
-                    <div class="debug-info" style="font-size: 0.8em; color: #666; margin-top: 5px;">
-                        Positions: ${JSON.stringify(data.changes.positions)}<br>
-                        ${data.changes.old_words ? `Old words: ${JSON.stringify(data.changes.old_words)}<br>` : ''}
-                        ${data.changes.new_words ? `New words: ${JSON.stringify(data.changes.new_words)}<br>` : ''}
-                        ${data.changes.deleted_words ? `Deleted words: ${JSON.stringify(data.changes.deleted_words)}` : ''}
+                    <div class="debug-info">
+                        <div>Positions: ${JSON.stringify(data.changes.positions)}</div>
+                        ${data.changes.old_words ? `<div>Old words: ${JSON.stringify(data.changes.old_words)}</div>` : ''}
+                        ${data.changes.new_words ? `<div>New words: ${JSON.stringify(data.changes.new_words)}</div>` : ''}
+                        ${data.changes.deleted_words ? `<div>Deleted words: ${JSON.stringify(data.changes.deleted_words)}</div>` : ''}
                     </div>
                 </div>
                 ${index < filteredSteps.length - 1 ? '<div class="step-arrow"></div>' : ''}
             `;
         })
         .join('');
-    
-    container.innerHTML = stepsHtml;
 }
 
 function highlightChanges(text, changes, stepType) {
@@ -443,6 +402,7 @@ function highlightChanges(text, changes, stepType) {
         return text;
     } 
     else if (stepType === 'Random Insertion') {
+        // For insertions, we need to handle positions in order
         changes.positions.forEach((pos, idx) => {
             highlightMap.set(pos, {
                 word: changes.new_words[idx],
@@ -469,7 +429,7 @@ function highlightChanges(text, changes, stepType) {
         if (highlight) {
             console.log(`Highlighting word at position ${index}:`, {word, highlight});  // Debug log
             if (highlight.type === 'insert') {
-                return `<mark class="highlight-insert" title="Inserted word">${word}</mark>`;
+                return `<mark class="highlight-insert" title="Inserted word: ${highlight.word}">${word}</mark>`;
             } else {
                 return `<mark class="highlight-change" title="Changed from '${highlight.oldWord}'">${word}</mark>`;
             }
@@ -486,11 +446,5 @@ function displayFinalResult(container, text) {
             <p>${text}</p>
         </div>
     `;
-}
-
-function setActiveTab(activeButton) {
-    const buttons = activeButton.parentElement.getElementsByTagName('button');
-    Array.from(buttons).forEach(button => button.className = '');
-    activeButton.className = 'active';
 }
 
