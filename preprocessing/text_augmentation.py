@@ -101,25 +101,30 @@ class TextAugmenter:
         if not words:
             return text, changes
             
+        # Don't delete special tokens or try to delete more words than available
         deletable_positions = [i for i, word in enumerate(words) 
                              if word not in ['<PAD>', '[MASK]']]
         
         if not deletable_positions:
             return text, changes
 
-        # Randomly select n positions to delete
+        # Ensure we don't try to delete more words than available
         n_words = min(n_words, len(deletable_positions))
-        positions_to_delete = sorted(random.sample(deletable_positions, n_words), reverse=True)
         
-        for pos in positions_to_delete:
-            deleted_word = words[pos]
-            words.pop(pos)
-            
-            # Track changes
-            changes['positions'].append(pos)
-            changes['deleted_words'].append(deleted_word)
+        # Select positions to delete (no need to sort)
+        positions_to_delete = random.sample(deletable_positions, n_words)
         
-        return ' '.join(words), changes
+        # Create the result by marking deleted words with strikethrough
+        result_words = []
+        for i, word in enumerate(words):
+            if i in positions_to_delete:
+                # Keep the word in place but mark it as deleted
+                changes['positions'].append(i)
+                changes['deleted_words'].append(word)
+            else:
+                result_words.append(word)
+        
+        return ' '.join(result_words), changes
         
     def word_replacement(self, text, n_words=1):
         """Replace random word with another from vocabulary"""
