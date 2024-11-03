@@ -53,8 +53,8 @@ class ImageDisplayManager {
         const stepOrder = [
             'Rotation',
             'Flip',
-            'Brightness Adjustment',
-            'Noise Addition'
+            'Brightness',
+            'Noise'
         ];
         
         // Process steps in the correct order
