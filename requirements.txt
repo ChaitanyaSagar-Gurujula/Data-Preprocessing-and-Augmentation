@@ -4,6 +4,8 @@ flask
 torch==2.3.0
 torchtext==0.18.0
 torchvision==0.18.0
+torchaudio==2.3.0
+soundfile
 transformers
 nltk
 opencv-python

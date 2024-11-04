@@ -2,6 +2,7 @@ class DataManager {
     static currentData = null;
     static originalText = null;
     static originalImage = null;
+    static originalAudio = null;
 
     static setCurrentData(data) {
         this.currentData = data;
@@ -25,5 +26,13 @@ class DataManager {
 
     static getOriginalImage() {
         return this.originalImage;
+    }
+
+    static setOriginalAudio(audioData) {
+        this.originalAudio = audioData;
+    }
+
+    static getOriginalAudio() {
+        return this.originalAudio;
     }
 } 

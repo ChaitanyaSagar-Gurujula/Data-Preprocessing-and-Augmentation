@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Processing and Augmentation Tool</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -559,15 +560,37 @@
             border-radius: 8px;
             margin-top: 10px;
         }
+
+        /* Add to your existing CSS */
+        .audio-preview {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .audio-preview audio {
+            width: 100%;
+            max-width: 500px;
+            margin-top: 10px;
+        }
+
+        .preprocessing-steps audio, .augmentation-steps audio {
+            width: 100%;
+            max-width: 500px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Text Processing Tool</h1>
+        <h1>Data Processing Tool</h1>
         
         <div class="input-type-tabs">
             <button class="tab-button active" data-type="text">Text Processing</button>
             <button class="tab-button" data-type="image">Image Processing</button>
+            <button class="tab-button" data-type="audio">Audio Processing</button>
         </div>
 
         <div class="upload-section" id="drop-zone">
@@ -576,7 +599,7 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p>Drag and drop your file here or</p>
                 <button class="upload-btn" onclick="document.getElementById('file-input').click()">
-                    Choose File
+                    Choose Text File
                 </button>
                 <p id="file-name" class="file-name">No file chosen</p>
             </div>
@@ -588,9 +611,21 @@
                 <i class="fas fa-cloud-upload-alt"></i>
                 <p>Drag and drop your image here or</p>
                 <button class="upload-btn" onclick="document.getElementById('image-file-input').click()">
-                    Choose Image
+                    Choose Image File
                 </button>
                 <p id="image-file-name" class="file-name">No file chosen</p>
+            </div>
+        </div>
+
+        <div class="upload-section" id="audio-drop-zone" style="display: none;">
+            <input type="file" id="audio-file-input" class="file-input" accept="audio/*">    
+            <div class="upload-content">
+                <i class="fas fa-music"></i>
+                <p>Drag and drop an audio file here or</p>
+                <button class="upload-btn" onclick="document.getElementById('audio-file-input').click()">
+                    Choose Audio File
+                </button>
+                <p id="audio-file-name" class="file-name">No file chosen</p>
             </div>
         </div>
 
@@ -730,6 +765,77 @@
             </div>
         </div>
 
+        <div id="audio-process-section" style="display: none;">
+            <div class="options-container">
+                <div class="preprocessing-options">
+                    <div class="options-title">Audio Preprocessing Options</div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="audio-resample">
+                            Resample
+                            <input type="number" id="target-sample-rate" value="16000" class="n-words-input">
+                            Hz
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="audio-normalize">
+                            Normalize
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="noise-reduction">
+                            Noise Reduction
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="mfcc">
+                            MFCC Transform
+                            <input type="number" id="n-mfcc" value="13" min="1" max="40" class="n-words-input">
+                            coefficients
+                        </label>
+                    </div>
+                </div>
+
+                <div class="augmentation-options">
+                    <div class="options-title">Audio Augmentation Options</div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="time-stretch">
+                            Time Stretch
+                            <input type="number" id="stretch-rate" value="1.0" step="0.1" min="0.5" max="2.0" class="n-words-input">
+                            rate
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="pitch-shift">
+                            Pitch Shift
+                            <input type="number" id="pitch-steps" value="2" step="1" min="-12" max="12" class="n-words-input">
+                            steps
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="audio-noise">
+                            Add Noise
+                            <input type="number" id="noise-level" value="0.01" step="0.01" min="0" max="0.1" class="n-words-input">
+                            level
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="time-mask">
+                            Time Masking
+                            <input type="number" id="time-mask-param" value="80" min="1" max="200" class="n-words-input">
+                            ms
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="freq-mask">
+                            Frequency Masking
+                            <input type="number" id="freq-mask-param" value="80" min="1" max="200" class="n-words-input">
+                            Hz
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn preprocess-btn" onclick="AudioProcessor.preprocess()">Preprocess Audio</button>
+                <button class="action-btn augment-btn" onclick="AudioProcessor.augment()">Augment Audio</button>
+            </div>
+        </div>
+
         <div id="data-container"></div>
     </div>
 
@@ -742,5 +848,8 @@
     <script src="{{ url_for('static', filename='js/image-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/image-display-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/processors/image-processor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio-display-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processors/audio-processor.js') }}"></script>
 </body>
 </html>

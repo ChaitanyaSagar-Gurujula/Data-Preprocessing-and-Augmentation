@@ -1,8 +1,14 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from preprocessing.text_preprocessing import TextPreprocessor
 from preprocessing.text_augmentation import TextAugmenter
 from preprocessing.image_preprocessing import ImagePreprocessor
 from preprocessing.image_augmentation import ImageAugmenter
+from preprocessing.audio_preprocessing import AudioPreprocessor
+from preprocessing.audio_augmentation import AudioAugmenter
+import os
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
 
@@ -12,6 +18,8 @@ augmenter = TextAugmenter()  # Initialize the augmenter
 # Initialize processors
 image_preprocessor = ImagePreprocessor()
 image_augmenter = ImageAugmenter()
+audio_preprocessor = AudioPreprocessor()
+audio_augmenter = AudioAugmenter()
 
 @app.route('/')
 def index():
@@ -92,6 +100,46 @@ def augment_image():
         return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/preprocess-audio', methods=['POST'])
+def preprocess_audio():
+    try:
+        data = request.json
+        audio_data = data.get('audio')
+        options = data.get('options', {})
+        
+        if not audio_data:
+            return jsonify({'error': 'No audio data provided'}), 400
+            
+        logging.debug(f"Received options: {options}")
+        
+        result = audio_preprocessor.preprocess(audio_data, options)
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f"Error in preprocess_audio: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/augment-audio', methods=['POST'])
+def augment_audio():
+    try:
+        data = request.json
+        audio_data = data.get('audio')
+        options = data.get('options', {})
+        
+        if not audio_data:
+            return jsonify({'error': 'No audio data provided'}), 400
+            
+        result = audio_augmenter.augment(audio_data, options)
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                             'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize new components
     TabManager.initialize();
     ImageHandler.initialize();
+    AudioHandler.initialize();
 });
 
 // Define global functions for backward compatibility

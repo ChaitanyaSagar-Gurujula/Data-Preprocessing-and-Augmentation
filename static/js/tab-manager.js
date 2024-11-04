@@ -1,35 +1,50 @@
 class TabManager {
     static initialize() {
-        const tabs = document.querySelectorAll('.tab-button');
-        const textDropZone = document.getElementById('drop-zone');
-        const imageDropZone = document.getElementById('image-drop-zone');
-        const textProcessSection = document.getElementById('process-section');
-        const imageProcessSection = document.getElementById('image-process-section');
+        const tabButtons = document.querySelectorAll('.tab-button');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs
-                tabs.forEach(t => t.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                tab.classList.add('active');
+                // Hide all upload and process sections
+                document.getElementById('drop-zone').style.display = 'none';
+                document.getElementById('image-drop-zone').style.display = 'none';
+                document.getElementById('audio-drop-zone').style.display = 'none';
+                document.getElementById('process-section').style.display = 'none';
+                document.getElementById('image-process-section').style.display = 'none';
+                document.getElementById('audio-process-section').style.display = 'none';
 
-                // Show/hide appropriate sections
-                if (tab.dataset.type === 'text') {
-                    textDropZone.style.display = 'block';
-                    imageDropZone.style.display = 'none';
-                    textProcessSection.style.display = 'none';
-                    imageProcessSection.style.display = 'none';
-                } else {
-                    textDropZone.style.display = 'none';
-                    imageDropZone.style.display = 'block';
-                    textProcessSection.style.display = 'none';
-                    imageProcessSection.style.display = 'none';
+                // Show the appropriate sections based on the selected tab
+                const selectedTab = button.getAttribute('data-type');
+                switch(selectedTab) {
+                    case 'text':
+                        document.getElementById('drop-zone').style.display = 'block';
+                        if (DataManager.getOriginalText()) {
+                            document.getElementById('process-section').style.display = 'block';
+                        }
+                        break;
+                    case 'image':
+                        document.getElementById('image-drop-zone').style.display = 'block';
+                        if (DataManager.getOriginalImage()) {
+                            document.getElementById('image-process-section').style.display = 'block';
+                        }
+                        break;
+                    case 'audio':
+                        document.getElementById('audio-drop-zone').style.display = 'block';
+                        if (DataManager.getOriginalAudio()) {
+                            document.getElementById('audio-process-section').style.display = 'block';
+                        }
+                        break;
                 }
-
-                // Clear the data container
-                document.getElementById('data-container').innerHTML = '';
             });
         });
+
+        // Set text tab as default active tab
+        const textTab = document.querySelector('[data-type="text"]');
+        if (textTab) {
+            textTab.click();
+        }
     }
 } 
