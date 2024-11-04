@@ -3,6 +3,8 @@ import torchaudio
 import io
 import base64
 import logging
+import librosa
+import numpy as np
 
 # Set the audio backend to soundfile
 torchaudio.set_audio_backend("soundfile")
@@ -14,19 +16,62 @@ class AudioAugmenter:
 
     def _pitch_shift(self, waveform, sample_rate, n_steps):
         """Shift the pitch of the audio"""
-        effects = [
-            ["pitch", f"{n_steps}"],
-            ["rate", f"{sample_rate}"]
-        ]
-        augmented_audio, new_sample_rate = torchaudio.sox_effects.apply_effects_tensor(
-            waveform, sample_rate, effects
-        )
-        return augmented_audio
+        try:
+            logging.debug(f"Original waveform shape: {waveform.shape}, sample_rate: {sample_rate}")
+            
+            # Convert torch tensor to numpy array
+            waveform_np = waveform.numpy().squeeze()
+            
+            # Apply pitch shift using librosa
+            shifted = librosa.effects.pitch_shift(
+                y=waveform_np,
+                sr=sample_rate,
+                n_steps=n_steps,
+                bins_per_octave=12  # Standard semitones per octave
+            )
+            
+            # Convert back to torch tensor and maintain original shape
+            shifted_tensor = torch.FloatTensor(shifted)
+            if len(shifted_tensor.shape) == 1:
+                shifted_tensor = shifted_tensor.unsqueeze(0)
+                
+            logging.debug(f"Augmented waveform shape: {shifted_tensor.shape}")
+            return shifted_tensor
+            
+        except Exception as e:
+            logging.error(f"Error in pitch shifting: {str(e)}")
+            raise
 
     def _add_noise(self, waveform, noise_level):
         """Add random noise to audio"""
-        noise = torch.randn_like(waveform) * noise_level
-        return torch.clamp(waveform + noise, -1, 1)
+        try:
+            # Ensure noise_level is between 0 and 1
+            noise_level = max(0.0, min(1.0, noise_level))
+            
+            # Calculate signal power
+            signal_power = waveform.norm(p=2)
+            
+            # Generate noise
+            noise = torch.randn_like(waveform)
+            noise_power = noise.norm(p=2)
+            
+            # Scale noise to match desired SNR
+            scaling_factor = signal_power / noise_power * noise_level
+            scaled_noise = noise * scaling_factor
+            
+            # Add scaled noise to original signal
+            noisy_waveform = waveform + scaled_noise
+            
+            # Normalize to prevent clipping
+            max_val = torch.max(torch.abs(noisy_waveform))
+            if max_val > 1:
+                noisy_waveform = noisy_waveform / max_val
+                
+            return noisy_waveform
+            
+        except Exception as e:
+            logging.error(f"Error in noise addition: {str(e)}")
+            raise
 
     def _time_mask(self, waveform, mask_param):
         """Apply time masking"""

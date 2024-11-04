@@ -7,10 +7,20 @@ from preprocessing.audio_preprocessing import AudioPreprocessor
 from preprocessing.audio_augmentation import AudioAugmenter
 import os
 import logging
+from flask_cors import CORS
 
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
+CORS(app)
+
+# Add these headers to your response
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 preprocessor = TextPreprocessor()
 augmenter = TextAugmenter()  # Initialize the augmenter

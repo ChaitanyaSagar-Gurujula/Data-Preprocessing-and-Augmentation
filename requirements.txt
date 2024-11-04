@@ -9,3 +9,5 @@ soundfile
 transformers
 nltk
 opencv-python
+flask-cors
+librosa

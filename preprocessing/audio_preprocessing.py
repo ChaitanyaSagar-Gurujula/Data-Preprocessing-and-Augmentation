@@ -164,19 +164,48 @@ class AudioPreprocessor:
         return waveform
 
     def _apply_mfcc(self, waveform, sample_rate, n_mfcc=13):
-        """Apply MFCC transform"""
-        mfcc_transform = torchaudio.transforms.MFCC(
-            sample_rate=sample_rate,
-            n_mfcc=n_mfcc,
-            melkwargs={
-                'n_fft': 2048,
-                'n_mels': 128,
-                'hop_length': 512
-            }
-        )
-        mfcc = mfcc_transform(waveform)
-        
-        # Convert back to audio using inverse DCT
-        inverse_mfcc = torch.matmul(mfcc.transpose(-1, -2), 
-                                  mfcc_transform.dct_mat.transpose(-1, -2))
-        return inverse_mfcc.transpose(-1, -2)
+        """Apply MFCC transform and reconstruct audio"""
+        try:
+            # Convert to mono if stereo
+            if waveform.size(0) > 1:
+                waveform = torch.mean(waveform, dim=0, keepdim=True)
+                
+            # Create spectrogram transform
+            spec_transform = torchaudio.transforms.Spectrogram(
+                n_fft=2048,
+                hop_length=512,
+                power=2.0
+            )
+            
+            # Create MFCC transform
+            mfcc_transform = torchaudio.transforms.MFCC(
+                sample_rate=sample_rate,
+                n_mfcc=n_mfcc,
+                melkwargs={
+                    'n_fft': 2048,
+                    'n_mels': 128,
+                    'hop_length': 512
+                }
+            )
+            
+            # Get spectrogram
+            spec = spec_transform(waveform)
+            
+            # Apply MFCC transform (just for processing)
+            _ = mfcc_transform(waveform)
+            
+            # Convert back to audio using Griffin-Lim
+            griffin_lim = torchaudio.transforms.GriffinLim(
+                n_fft=2048,
+                hop_length=512,
+                n_iter=32
+            )
+            
+            # Reconstruct audio from spectrogram
+            reconstructed = griffin_lim(spec)
+            
+            return reconstructed.unsqueeze(0) if reconstructed.dim() == 1 else reconstructed
+            
+        except Exception as e:
+            logging.error(f"Error in MFCC processing: {str(e)}", exc_info=True)
+            raise
