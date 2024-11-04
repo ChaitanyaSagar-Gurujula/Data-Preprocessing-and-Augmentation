@@ -47,4 +47,32 @@ class TabManager {
             textTab.click();
         }
     }
+
+    static switchTab(type) {
+        // Hide all sections first
+        document.getElementById('process-section').style.display = 'none';
+        document.getElementById('image-process-section').style.display = 'none';
+        document.getElementById('audio-process-section').style.display = 'none';
+        
+        // Clear the data container
+        document.getElementById('data-container').innerHTML = '';
+
+        // Show the selected section
+        if (type === 'text') {
+            document.getElementById('process-section').style.display = 'block';
+        } else if (type === 'image') {
+            document.getElementById('image-process-section').style.display = 'block';
+        } else if (type === 'audio') {
+            document.getElementById('audio-process-section').style.display = 'block';
+        }
+
+        // Update tab button states
+        document.querySelectorAll('.tab-button').forEach(button => {
+            if (button.dataset.type === type) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+    }
 } 

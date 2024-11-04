@@ -13,46 +13,15 @@ class AudioAugmenter:
         logging.basicConfig(level=logging.DEBUG)
 
     def _pitch_shift(self, waveform, sample_rate, n_steps):
-        """Shift the pitch of the audio using phase vocoder"""
-        try:
-            # Convert to mono if stereo
-            if waveform.size(0) > 1:
-                waveform = torch.mean(waveform, dim=0, keepdim=True)
-
-            # Create spectrogram
-            spec_transform = torchaudio.transforms.Spectrogram(
-                n_fft=2048,
-                hop_length=512,
-                power=None  # Get complex spectrogram
-            )
-            spec = spec_transform(waveform)
-
-            # Calculate frequency shift factor
-            shift_factor = 2 ** (n_steps / 12)  # semitone shift
-
-            # Create frequency bins
-            freq_bins = torch.linspace(0, sample_rate//2, spec.shape[1])
-            new_freq_bins = freq_bins * shift_factor
-
-            # Interpolate spectrogram
-            new_spec = torch.zeros_like(spec)
-            for i in range(spec.shape[2]):  # For each time frame
-                real_part = torch.interp(new_freq_bins, freq_bins, spec[0, :, i].real)
-                imag_part = torch.interp(new_freq_bins, freq_bins, spec[0, :, i].imag)
-                new_spec[0, :, i] = torch.complex(real_part, imag_part)
-
-            # Convert back to waveform
-            inverse_transform = torchaudio.transforms.InverseSpectrogram(
-                n_fft=2048,
-                hop_length=512
-            )
-            shifted_waveform = inverse_transform(new_spec)
-
-            return shifted_waveform
-
-        except Exception as e:
-            logging.error(f"Error in pitch shift: {str(e)}", exc_info=True)
-            raise
+        """Shift the pitch of the audio"""
+        effects = [
+            ["pitch", f"{n_steps}"],
+            ["rate", f"{sample_rate}"]
+        ]
+        augmented_audio, new_sample_rate = torchaudio.sox_effects.apply_effects_tensor(
+            waveform, sample_rate, effects
+        )
+        return augmented_audio
 
     def _add_noise(self, waveform, noise_level):
         """Add random noise to audio"""

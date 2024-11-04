@@ -1,30 +1,65 @@
 class AudioDisplayManager {
-    static displayOriginalAudio(audioData) {
-        const container = document.getElementById('data-container');
-        container.innerHTML = `
-            <div class="audio-preview">
-                <h3>Original Audio</h3>
-                <audio controls>
-                    <source src="${audioData}" type="audio/wav">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        `;
-    }
-
     static displayPreprocessedAudio(result) {
         const container = document.getElementById('data-container');
-        let html = '<div class="preprocessing-steps">';
         
-        // Define the order of preprocessing steps
+        const splitView = `
+            <div class="split-view">
+                <div class="original-panel">
+                    <div class="panel-title">Original Audio</div>
+                    <div class="panel-content">
+                        <audio controls>
+                            <source src="${DataManager.getOriginalAudio()}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                </div>
+                <div class="processed-panel">
+                    <div class="panel-title">Preprocessing Results</div>
+                    <div class="preprocessing-steps">
+                        ${this.createPreprocessingStepsHtml(result)}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = splitView;
+    }
+
+    static displayAugmentedAudio(result) {
+        const container = document.getElementById('data-container');
+        
+        const splitView = `
+            <div class="split-view">
+                <div class="original-panel">
+                    <div class="panel-title">Original Audio</div>
+                    <div class="panel-content">
+                        <audio controls>
+                            <source src="${DataManager.getOriginalAudio()}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                </div>
+                <div class="processed-panel">
+                    <div class="panel-title">Augmentation Results</div>
+                    <div class="augmentation-steps">
+                        ${this.createAugmentationStepsHtml(result)}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = splitView;
+    }
+
+    static createPreprocessingStepsHtml(result) {
+        let html = '';
         const stepOrder = [
             'Resample',
-            'Normalize',
+            'Normalize', 
             'Noise Reduction',
             'MFCC'
         ];
         
-        // Process steps in the correct order
         stepOrder.forEach(stepName => {
             if (result.preprocessing_steps[stepName]) {
                 html += `
@@ -40,25 +75,23 @@ class AudioDisplayManager {
             }
         });
 
-        // Display final result
-        html += `
-            <div class="preprocessing-step">
-                <h3 style="text-align: left;">Final Result</h3>
-                <audio controls>
-                    <source src="${result.processed_audio}" type="audio/wav">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        </div>`;
+        if (result.processed_audio) {
+            html += `
+                <div class="preprocessing-step">
+                    <h3 style="text-align: left;">Final Result</h3>
+                    <audio controls>
+                        <source src="${result.processed_audio}" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            `;
+        }
 
-        container.innerHTML = html;
+        return html;
     }
 
-    static displayAugmentedAudio(result) {
-        const container = document.getElementById('data-container');
-        let html = '<div class="augmentation-steps">';
-        
-        // Define the order of augmentation steps
+    static createAugmentationStepsHtml(result) {
+        let html = '';
         const stepOrder = [
             'Time Stretch',
             'Pitch Shift',
@@ -67,7 +100,6 @@ class AudioDisplayManager {
             'Frequency Mask'
         ];
         
-        // Process steps in the correct order
         stepOrder.forEach(stepName => {
             if (result.augmentation_steps[stepName]) {
                 html += `
@@ -83,17 +115,38 @@ class AudioDisplayManager {
             }
         });
 
-        // Display final result
-        html += `
-            <div class="augmentation-step">
-                <h3 style="text-align: left;">Final Result</h3>
-                <audio controls>
-                    <source src="${result.augmented_audio}" type="audio/wav">
-                    Your browser does not support the audio element.
-                </audio>
-            </div>
-        </div>`;
+        if (result.augmented_audio) {
+            html += `
+                <div class="augmentation-step">
+                    <h3 style="text-align: left;">Final Result</h3>
+                    <audio controls>
+                        <source src="${result.augmented_audio}" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            `;
+        }
 
-        container.innerHTML = html;
+        return html;
+    }
+
+    static displayOriginalAudio(audioData) {
+        const container = document.getElementById('data-container');
+        
+        const splitView = `
+            <div class="split-view">
+                <div class="original-panel">
+                    <div class="panel-title">Original Audio</div>
+                    <div class="panel-content">
+                        <audio controls>
+                            <source src="${audioData}" type="audio/wav">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = splitView;
     }
 } 

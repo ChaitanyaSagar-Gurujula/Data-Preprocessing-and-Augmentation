@@ -588,9 +588,9 @@
         <h1>Data Processing Tool</h1>
         
         <div class="input-type-tabs">
-            <button class="tab-button active" data-type="text">Text Processing</button>
-            <button class="tab-button" data-type="image">Image Processing</button>
-            <button class="tab-button" data-type="audio">Audio Processing</button>
+            <button class="tab-button active" data-type="text" onclick="TabManager.switchTab('text')">Text</button>
+            <button class="tab-button" data-type="image" onclick="TabManager.switchTab('image')">Image</button>
+            <button class="tab-button" data-type="audio" onclick="TabManager.switchTab('audio')">Audio</button>
         </div>
 
         <div class="upload-section" id="drop-zone">
