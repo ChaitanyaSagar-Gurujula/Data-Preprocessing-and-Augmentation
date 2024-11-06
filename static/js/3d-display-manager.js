@@ -36,19 +36,31 @@ class ThreeDDisplayManager {
 
         container.innerHTML = html;
 
+        // Store viewers for cleanup
+        const viewers = [];
+
         // Initialize viewers for each step
         for (const [stepName, stepData] of Object.entries(result.preprocessing_steps)) {
-            await ThreeDDisplayManager.initializeViewer(
+            const viewer = await ThreeDDisplayManager.initializeViewer(
                 `${stepName.toLowerCase()}-viewer`, 
                 stepData
             );
+            viewers.push(viewer);
         }
 
         // Initialize final result viewer
-        await ThreeDDisplayManager.initializeViewer(
+        const finalViewer = await ThreeDDisplayManager.initializeViewer(
             'final-preprocessed-viewer',
             result.processed_model
         );
+        viewers.push(finalViewer);
+
+        // Clean up previous viewers when switching views
+        return {
+            cleanup: () => {
+                viewers.forEach(viewer => viewer.cleanup());
+            }
+        };
     }
 
     static async displayAugmented3DModel(result) {
@@ -76,19 +88,31 @@ class ThreeDDisplayManager {
 
         container.innerHTML = html;
 
+        // Store viewers for cleanup
+        const viewers = [];
+
         // Initialize viewers for each step
         for (const [stepName, stepData] of Object.entries(result.augmentation_steps)) {
-            await ThreeDDisplayManager.initializeViewer(
+            const viewer = await ThreeDDisplayManager.initializeViewer(
                 `${stepName.toLowerCase()}-viewer`, 
                 stepData
             );
+            viewers.push(viewer);
         }
 
         // Initialize final result viewer
-        await ThreeDDisplayManager.initializeViewer(
+        const finalViewer = await ThreeDDisplayManager.initializeViewer(
             'final-augmented-viewer',
             result.augmented_model
         );
+        viewers.push(finalViewer);
+
+        // Clean up previous viewers when switching views
+        return {
+            cleanup: () => {
+                viewers.forEach(viewer => viewer.cleanup());
+            }
+        };
     }
 
     static async initializeViewer(containerId, modelData) {
@@ -384,15 +408,25 @@ class ThreeDDisplayManager {
         directionalLight.position.copy(camera.position);
         scene.add(directionalLight);
 
-        // Animation loop
+        // Clean up any existing animation loop
+        if (window[`animationFrameId_${containerId}`]) {
+            cancelAnimationFrame(window[`animationFrameId_${containerId}`]);
+        }
+
+        // Ensure camera is stable
+        camera.position.set(d, d, d);
+        camera.lookAt(0, 0, 0);
+        camera.updateProjectionMatrix();
+
+        // Modified animation loop with container-specific ID
         function animate() {
-            requestAnimationFrame(animate);
+            window[`animationFrameId_${containerId}`] = requestAnimationFrame(animate);
             renderer.render(scene, camera);
         }
         animate();
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
+        // Modified window resize handler
+        const resizeHandler = () => {
             const width = container.clientWidth;
             const height = container.clientHeight;
             const aspect = width / height;
@@ -404,8 +438,27 @@ class ThreeDDisplayManager {
             
             camera.updateProjectionMatrix();
             renderer.setSize(width, height);
-        });
+        };
 
-        return { scene, camera };
+        // Store the resize handler reference
+        window[`resizeHandler_${containerId}`] = resizeHandler;
+        window.addEventListener('resize', resizeHandler);
+
+        // Return cleanup function with the viewer
+        return { 
+            scene, 
+            camera,
+            cleanup: () => {
+                // Cancel animation frame
+                if (window[`animationFrameId_${containerId}`]) {
+                    cancelAnimationFrame(window[`animationFrameId_${containerId}`]);
+                }
+                // Remove resize listener
+                window.removeEventListener('resize', window[`resizeHandler_${containerId}`]);
+                // Remove references
+                delete window[`animationFrameId_${containerId}`];
+                delete window[`resizeHandler_${containerId}`];
+            }
+        };
     }
 } 

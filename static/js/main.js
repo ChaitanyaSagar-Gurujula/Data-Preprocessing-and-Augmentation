@@ -24,3 +24,42 @@ document.addEventListener('DOMContentLoaded', () => {
 // Define global functions for backward compatibility
 window.preprocessData = () => TextProcessor.preprocess();
 window.augmentData = () => TextProcessor.augment(); 
+
+let currentDisplay = null;
+
+async function switchView(viewType, data) {
+    // Clean up previous view
+    if (currentDisplay && currentDisplay.cleanup) {
+        currentDisplay.cleanup();
+    }
+
+    // Initialize new view
+    switch(viewType) {
+        case 'original':
+            currentDisplay = await ThreeDDisplayManager.displayOriginal3DModel(data);
+            break;
+        case 'preprocessed':
+            currentDisplay = await ThreeDDisplayManager.displayPreprocessed3DModel(data);
+            break;
+        case 'augmented':
+            currentDisplay = await ThreeDDisplayManager.displayAugmented3DModel(data);
+            break;
+    }
+}
+
+// Then update your event handlers to use switchView:
+document.getElementById('preprocess-button').addEventListener('click', async () => {
+    const result = await preprocessModel();
+    await switchView('preprocessed', result);
+});
+
+document.getElementById('augment-button').addEventListener('click', async () => {
+    const result = await augmentModel();
+    await switchView('augmented', result);
+});
+
+// When loading initial model
+async function handleFileUpload(file) {
+    const modelData = await loadModelData(file);
+    await switchView('original', modelData);
+}
