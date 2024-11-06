@@ -102,7 +102,7 @@ class ThreeDDisplayManager {
 
         // Orthographic camera for better mathematical visualization
         const aspect = width / height;
-        const d = 5;
+        const d = 3;
         const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 0.1, 2000);
         camera.position.set(d, d, d);
         camera.lookAt(0, 0, 0);
@@ -116,53 +116,135 @@ class ThreeDDisplayManager {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
+        // Add toggle buttons
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        `;
+        buttonContainer.innerHTML = `
+            <button id="${containerId}-solid" class="view-toggle active">Solid</button>
+            <button id="${containerId}-wire" class="view-toggle">Wireframe</button>
+            <button id="${containerId}-both" class="view-toggle">Both</button>
+        `;
+        container.appendChild(buttonContainer);
+
+        // Add button styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .view-toggle {
+                margin: 0 5px;
+                padding: 8px 16px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                background: white;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            .view-toggle:hover {
+                background: #f0f0f0;
+            }
+            .view-toggle.active {
+                background: #007bff;
+                color: white;
+                border-color: #0056b3;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // First, let's define a global scale factor that both model and coordinates will use
+        const globalScale = 2.2;  // This controls overall size
+
         // Load and add the model first
-        let model;
+        let solidMesh, wireframeMesh;
         if (typeof modelData === 'string' && modelData.includes('OFF')) {
-            model = OFFLoader.createMesh(modelData);
+            const geometry = OFFLoader.createMesh(modelData).geometry;
             
-            // Create material with solid faces and wireframe
-            const meshMaterial = new THREE.MeshPhongMaterial({
-                color: 0x00aaff,
-                opacity: 0.7,
-                transparent: true,
-                side: THREE.DoubleSide
-            });
+            // Create solid mesh with adjusted material
+            solidMesh = new THREE.Mesh(
+                geometry,
+                new THREE.MeshPhongMaterial({
+                    color: 0x00aaff,
+                    opacity: 0.8,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                })
+            );
 
-            const wireframeMaterial = new THREE.MeshBasicMaterial({
-                color: 0x000000,
-                wireframe: true,
-                wireframeLinewidth: 1
-            });
+            // Create wireframe mesh with thicker lines
+            wireframeMesh = new THREE.Mesh(
+                geometry,
+                new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    wireframe: true,
+                    wireframeLinewidth: 2
+                })
+            );
 
-            // Create two meshes: one for solid faces and one for wireframe
-            const solidMesh = new THREE.Mesh(model.geometry, meshMaterial);
-            const wireframeMesh = new THREE.Mesh(model.geometry, wireframeMaterial);
-
-            // Group them together
-            model = new THREE.Group();
-            model.add(solidMesh);
-            model.add(wireframeMesh);
-
-            // Scale and center the model
-            const bbox = new THREE.Box3().setFromObject(model);
+            // Scale model using global scale
+            const bbox = new THREE.Box3().setFromObject(solidMesh);
             const center = bbox.getCenter(new THREE.Vector3());
             const size = bbox.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 2 / maxDim;
+            const scale = globalScale / maxDim;
             
-            model.position.sub(center);
-            model.scale.multiplyScalar(scale);
+            solidMesh.position.sub(center);
+            solidMesh.scale.multiplyScalar(scale);
+            wireframeMesh.position.copy(solidMesh.position);
+            wireframeMesh.scale.copy(solidMesh.scale);
             
-            scene.add(model);
+            scene.add(solidMesh);
+            scene.add(wireframeMesh);
+            wireframeMesh.visible = false;
+
+            // Add toggle functionality
+            const buttons = {
+                solid: document.getElementById(`${containerId}-solid`),
+                wire: document.getElementById(`${containerId}-wire`),
+                both: document.getElementById(`${containerId}-both`)
+            };
+
+            const updateView = (mode) => {
+                // Update button states
+                Object.values(buttons).forEach(btn => btn.classList.remove('active'));
+                buttons[mode].classList.add('active');
+
+                // Update mesh visibility
+                switch(mode) {
+                    case 'solid':
+                        solidMesh.visible = true;
+                        wireframeMesh.visible = false;
+                        break;
+                    case 'wire':
+                        solidMesh.visible = false;
+                        wireframeMesh.visible = true;
+                        break;
+                    case 'both':
+                        solidMesh.visible = true;
+                        wireframeMesh.visible = true;
+                        break;
+                }
+            };
+
+            // Add click handlers
+            Object.entries(buttons).forEach(([mode, btn]) => {
+                btn.addEventListener('click', () => updateView(mode));
+            });
         }
 
         // Create mathematical coordinate system
         const createMathCoordinateSystem = () => {
             const coordSystem = new THREE.Group();
 
-            // Create grid planes
-            const gridSize = 5;
+            // Update grid size
+            const gridSize = 5 * globalScale;
             const divisions = 10;
 
             // Create grid lines
@@ -202,8 +284,8 @@ class ThreeDDisplayManager {
             coordSystem.add(createGridLines('xy', 0x0000ff)); // Blue grid
             // Add other grids as needed...
 
-            // Create axes
-            const axesLength = 2.5;
+            // Update axes length
+            const axesLength = 2.5 * globalScale;
             const createAxis = (start, end, color) => {
                 const points = [start, end];
                 const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -214,11 +296,23 @@ class ThreeDDisplayManager {
                 return new THREE.Line(geometry, material);
             };
 
-            // Add main axes
+            // Create axes with scaled length
             const axes = {
-                x: createAxis(new THREE.Vector3(-axesLength, 0, 0), new THREE.Vector3(axesLength, 0, 0), 0xff0000),
-                y: createAxis(new THREE.Vector3(0, -axesLength, 0), new THREE.Vector3(0, axesLength, 0), 0x00ff00),
-                z: createAxis(new THREE.Vector3(0, 0, -axesLength), new THREE.Vector3(0, 0, axesLength), 0x0000ff)
+                x: createAxis(
+                    new THREE.Vector3(-axesLength, 0, 0), 
+                    new THREE.Vector3(axesLength, 0, 0), 
+                    0xff0000
+                ),
+                y: createAxis(
+                    new THREE.Vector3(0, -axesLength, 0), 
+                    new THREE.Vector3(0, axesLength, 0), 
+                    0x00ff00
+                ),
+                z: createAxis(
+                    new THREE.Vector3(0, 0, -axesLength), 
+                    new THREE.Vector3(0, 0, axesLength), 
+                    0x0000ff
+                )
             };
 
             Object.values(axes).forEach(axis => coordSystem.add(axis));
@@ -226,39 +320,47 @@ class ThreeDDisplayManager {
             // Add axis labels
             const createAxisLabels = (axis, color) => {
                 for (let i = -2; i <= 2; i++) {
+                    if (i === 0) continue;
+
                     const value = i.toFixed(1);
                     const canvas = document.createElement('canvas');
-                    canvas.width = 64;
-                    canvas.height = 32;
+                    canvas.width = 128;
+                    canvas.height = 64;
                     const ctx = canvas.getContext('2d');
 
                     ctx.fillStyle = 'white';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(0, 0, canvas.width, canvas.height);
                     
-                    ctx.font = 'bold 24px Arial';
+                    ctx.font = 'bold 48px Arial';
                     ctx.fillStyle = color;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(value, 32, 16);
+                    ctx.fillText(value, canvas.width/2, canvas.height/2);
 
                     const texture = new THREE.CanvasTexture(canvas);
+                    texture.minFilter = THREE.LinearFilter;
                     const spriteMaterial = new THREE.SpriteMaterial({ 
                         map: texture,
                         sizeAttenuation: false
                     });
                     const sprite = new THREE.Sprite(spriteMaterial);
 
+                    // Adjust positions based on global scale
+                    const offset = 0.3 * globalScale;  // Scale the offset
                     const position = new THREE.Vector3();
                     if (axis === 'x') {
-                        position.set(i, -0.2, 0);
+                        position.set(i * globalScale, -offset, 0);
                     } else if (axis === 'y') {
-                        position.set(-0.2, i, 0);
+                        position.set(-offset, i * globalScale, 0);
                     } else {
-                        position.set(-0.2, 0, i);
+                        position.set(-offset, 0, i * globalScale);
                     }
 
                     sprite.position.copy(position);
-                    sprite.scale.set(0.5, 0.25, 1);
+                    sprite.scale.set(0.6, 0.3, 1);
                     coordSystem.add(sprite);
                 }
             };
