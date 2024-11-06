@@ -15,18 +15,27 @@ class ThreeDDisplayManager {
         const container = document.getElementById('data-container');
         let html = '<div class="preprocessing-steps">';
         
-        // Process each preprocessing step
-        for (const [stepName, stepData] of Object.entries(result.preprocessing_steps)) {
-            html += `
-                <div class="preprocessing-step">
-                    <h3>${stepName}</h3>
-                    <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
-                </div>
-                <div class="step-arrow">↓</div>
-            `;
-        }
+        // Define the order of preprocessing steps
+        const stepOrder = [
+            'Normalize',
+            'Center',
+            'Simplify',
+            'Smooth'
+        ];
+        
+        // First, build the HTML
+        stepOrder.forEach(stepName => {
+            if (result.preprocessing_steps[stepName]) {
+                html += `
+                    <div class="preprocessing-step">
+                        <h3>${stepName}</h3>
+                        <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
+                    </div>
+                    <div class="step-arrow">↓</div>
+                `;
+            }
+        });
 
-        // Add final result
         html += `
             <div class="preprocessing-step">
                 <h3>Final Result</h3>
@@ -39,13 +48,15 @@ class ThreeDDisplayManager {
         // Store viewers for cleanup
         const viewers = [];
 
-        // Initialize viewers for each step
-        for (const [stepName, stepData] of Object.entries(result.preprocessing_steps)) {
-            const viewer = await ThreeDDisplayManager.initializeViewer(
-                `${stepName.toLowerCase()}-viewer`, 
-                stepData
-            );
-            viewers.push(viewer);
+        // Then initialize viewers using for...of loop
+        for (const stepName of stepOrder) {
+            if (result.preprocessing_steps[stepName]) {
+                const viewer = await ThreeDDisplayManager.initializeViewer(
+                    `${stepName.toLowerCase()}-viewer`, 
+                    result.preprocessing_steps[stepName]
+                );
+                viewers.push(viewer);
+            }
         }
 
         // Initialize final result viewer
@@ -55,7 +66,6 @@ class ThreeDDisplayManager {
         );
         viewers.push(finalViewer);
 
-        // Clean up previous viewers when switching views
         return {
             cleanup: () => {
                 viewers.forEach(viewer => viewer.cleanup());
@@ -67,18 +77,27 @@ class ThreeDDisplayManager {
         const container = document.getElementById('data-container');
         let html = '<div class="augmentation-steps">';
         
-        // Process each augmentation step
-        for (const [stepName, stepData] of Object.entries(result.augmentation_steps)) {
-            html += `
-                <div class="augmentation-step">
-                    <h3>${stepName}</h3>
-                    <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
-                </div>
-                <div class="step-arrow">↓</div>
-            `;
-        }
+        // Define the order of augmentation steps
+        const stepOrder = [
+            'Rotation',
+            'Scale',
+            'Noise',
+            'Deform'
+        ];
+        
+        // First, build the HTML
+        stepOrder.forEach(stepName => {
+            if (result.augmentation_steps[stepName]) {
+                html += `
+                    <div class="augmentation-step">
+                        <h3>${stepName}</h3>
+                        <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
+                    </div>
+                    <div class="step-arrow">↓</div>
+                `;
+            }
+        });
 
-        // Add final result
         html += `
             <div class="augmentation-step">
                 <h3>Final Result</h3>
@@ -91,13 +110,15 @@ class ThreeDDisplayManager {
         // Store viewers for cleanup
         const viewers = [];
 
-        // Initialize viewers for each step
-        for (const [stepName, stepData] of Object.entries(result.augmentation_steps)) {
-            const viewer = await ThreeDDisplayManager.initializeViewer(
-                `${stepName.toLowerCase()}-viewer`, 
-                stepData
-            );
-            viewers.push(viewer);
+        // Then initialize viewers using for...of loop
+        for (const stepName of stepOrder) {
+            if (result.augmentation_steps[stepName]) {
+                const viewer = await ThreeDDisplayManager.initializeViewer(
+                    `${stepName.toLowerCase()}-viewer`, 
+                    result.augmentation_steps[stepName]
+                );
+                viewers.push(viewer);
+            }
         }
 
         // Initialize final result viewer
@@ -107,7 +128,6 @@ class ThreeDDisplayManager {
         );
         viewers.push(finalViewer);
 
-        // Clean up previous viewers when switching views
         return {
             cleanup: () => {
                 viewers.forEach(viewer => viewer.cleanup());
@@ -461,4 +481,7 @@ class ThreeDDisplayManager {
             }
         };
     }
-} 
+}
+
+// Make it globally available
+window.ThreeDDisplayManager = ThreeDDisplayManager; 

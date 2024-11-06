@@ -92,3 +92,6 @@ class ThreeDProcessor {
         }
     }
 } 
+
+// Make it globally available
+window.ThreeDProcessor = ThreeDProcessor;

@@ -104,7 +104,7 @@ class ThreeDAugmenter:
             augmented_mesh = mesh.copy()
             steps = {}
 
-            if options.get('rotation', {}).get('enabled'):
+            if options.get('3d-rotation', {}).get('enabled'):
                 print("Applying random rotation...")
                 augmented_mesh = self.random_rotation(augmented_mesh)
                 steps['Rotation'] = self._mesh_to_off_string(augmented_mesh)

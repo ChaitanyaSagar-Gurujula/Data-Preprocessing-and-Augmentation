@@ -47,18 +47,7 @@ async function switchView(viewType, data) {
     }
 }
 
-// Then update your event handlers to use switchView:
-document.getElementById('preprocess-button').addEventListener('click', async () => {
-    const result = await preprocessModel();
-    await switchView('preprocessed', result);
-});
-
-document.getElementById('augment-button').addEventListener('click', async () => {
-    const result = await augmentModel();
-    await switchView('augmented', result);
-});
-
-// When loading initial model
+// Keep the handleFileUpload function
 async function handleFileUpload(file) {
     const modelData = await loadModelData(file);
     await switchView('original', modelData);
