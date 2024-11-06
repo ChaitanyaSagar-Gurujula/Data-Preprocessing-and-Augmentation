@@ -5,6 +5,8 @@ from preprocessing.image_preprocessing import ImagePreprocessor
 from preprocessing.image_augmentation import ImageAugmenter
 from preprocessing.audio_preprocessing import AudioPreprocessor
 from preprocessing.audio_augmentation import AudioAugmenter
+from preprocessing.threed_preprocessing import ThreeDPreprocessor
+from preprocessing.threed_augmentation import ThreeDAugmenter
 import os
 import logging
 from flask_cors import CORS
@@ -30,6 +32,8 @@ image_preprocessor = ImagePreprocessor()
 image_augmenter = ImageAugmenter()
 audio_preprocessor = AudioPreprocessor()
 audio_augmenter = AudioAugmenter()
+threed_preprocessor = ThreeDPreprocessor()
+threed_augmenter = ThreeDAugmenter()
 
 @app.route('/')
 def index():
@@ -143,6 +147,38 @@ def augment_audio():
         result = audio_augmenter.augment(audio_data, options)
         return jsonify(result)
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/preprocess-3d', methods=['POST'])
+def preprocess_3d():
+    try:
+        data = request.json
+        if not data or 'model' not in data:
+            return jsonify({'error': 'No 3D model data provided'}), 400
+            
+        model_data = data['model']
+        options = data['options']
+        
+        print("Received 3D model data and options")
+        print(f"Options: {options}")
+        
+        result = threed_preprocessor.preprocess(model_data, options)
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Error in preprocess_3d: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/augment-3d', methods=['POST'])
+def augment_3d():
+    try:
+        data = request.json
+        if not data or 'model' not in data:
+            return jsonify({'error': 'No 3D model data provided'}), 400
+            
+        result = threed_augmenter.augment(data['model'], data['options'])
+        return jsonify(result)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

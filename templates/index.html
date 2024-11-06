@@ -591,6 +591,7 @@
             <button class="tab-button active" data-type="text" onclick="TabManager.switchTab('text')">Text</button>
             <button class="tab-button" data-type="image" onclick="TabManager.switchTab('image')">Image</button>
             <button class="tab-button" data-type="audio" onclick="TabManager.switchTab('audio')">Audio</button>
+            <button class="tab-button" data-type="3d" onclick="TabManager.switchTab('3d')">3D</button>
         </div>
 
         <div class="upload-section" id="drop-zone">
@@ -626,6 +627,18 @@
                     Choose Audio File
                 </button>
                 <p id="audio-file-name" class="file-name">No file chosen</p>
+            </div>
+        </div>
+
+        <div class="upload-section" id="3d-drop-zone" style="display: none;">
+            <input type="file" id="3d-file-input" class="file-input" accept=".off,.obj,.stl,.ply,.glb,.gltf">
+            <div class="upload-content">
+                <i class="fas fa-cube"></i>
+                <p>Drag and drop a 3D model file here or</p>
+                <button class="upload-btn" onclick="document.getElementById('3d-file-input').click()">
+                    Choose 3D File
+                </button>
+                <p id="3d-file-name" class="file-name">No file chosen</p>
             </div>
         </div>
 
@@ -836,20 +849,101 @@
             </div>
         </div>
 
+        <div id="3d-process-section" style="display: none;">
+            <div class="options-container">
+                <div class="preprocessing-options">
+                    <div class="options-title">3D Preprocessing Options</div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-normalize">
+                            Normalize Scale
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-center">
+                            Center Model
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-simplify">
+                            Simplify Mesh
+                            <input type="number" id="simplify-ratio" value="0.5" min="0.1" max="1.0" step="0.1" class="n-words-input">
+                            ratio
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-smooth">
+                            Smooth Surface
+                            <input type="number" id="smooth-iterations" value="1" min="1" max="5" class="n-words-input">
+                            iterations
+                        </label>
+                    </div>
+                </div>
+
+                <div class="augmentation-options">
+                    <div class="options-title">3D Augmentation Options</div>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-rotation">
+                            Random Rotation
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-scale">
+                            Random Scale
+                            <input type="number" id="scale-factor" value="0.2" min="0.1" max="2.0" step="0.1" class="n-words-input">
+                            factor
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-noise">
+                            Surface Noise
+                            <input type="number" id="noise-amplitude" value="0.01" min="0.001" max="0.1" step="0.001" class="n-words-input">
+                            amplitude
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="3d-deform">
+                            Random Deformation
+                            <input type="number" id="deform-strength" value="0.1" min="0.01" max="1.0" step="0.01" class="n-words-input">
+                            strength
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn preprocess-btn" onclick="ThreeDProcessor.preprocess()">Preprocess 3D Model</button>
+                <button class="action-btn augment-btn" onclick="ThreeDProcessor.augment()">Augment 3D Model</button>
+            </div>
+        </div>
+
         <div id="data-container"></div>
     </div>
 
+    <!-- Third-party libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <!-- Core utilities -->
     <script src="{{ url_for('static', filename='js/data-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/display-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/processors/text-processor.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/upload-handler.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tab-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/image-handler.js') }}"></script>
+
+    <!-- Display managers -->
+    <script src="{{ url_for('static', filename='js/display-manager.js') }}"></script>
     <script src="{{ url_for('static', filename='js/image-display-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/processors/image-processor.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/audio-handler.js') }}"></script>
     <script src="{{ url_for('static', filename='js/audio-display-manager.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3d-display-manager.js') }}"></script>
+
+    <!-- Handlers -->
+    <script src="{{ url_for('static', filename='js/upload-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/audio-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/utils/off-loader.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/3d-handler.js') }}"></script>
+
+    <!-- Processors -->
+    <script src="{{ url_for('static', filename='js/processors/text-processor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processors/image-processor.js') }}"></script>
     <script src="{{ url_for('static', filename='js/processors/audio-processor.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processors/threed-processor.js') }}"></script>
+
+    <!-- Main application -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

@@ -14,10 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
         augmentBtn.addEventListener('click', () => TextProcessor.augment());
     }
     
-    // Initialize new components
+    // Initialize all components
     TabManager.initialize();
     ImageHandler.initialize();
     AudioHandler.initialize();
+    ThreeDHandler.initialize();
 });
 
 // Define global functions for backward compatibility

@@ -11,3 +11,5 @@ nltk
 opencv-python
 flask-cors
 librosa
+trimesh
+scipy

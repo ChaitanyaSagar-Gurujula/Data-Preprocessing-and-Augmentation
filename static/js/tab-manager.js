@@ -12,9 +12,11 @@ class TabManager {
                 document.getElementById('drop-zone').style.display = 'none';
                 document.getElementById('image-drop-zone').style.display = 'none';
                 document.getElementById('audio-drop-zone').style.display = 'none';
+                document.getElementById('3d-drop-zone').style.display = 'none';
                 document.getElementById('process-section').style.display = 'none';
                 document.getElementById('image-process-section').style.display = 'none';
                 document.getElementById('audio-process-section').style.display = 'none';
+                document.getElementById('3d-process-section').style.display = 'none';
 
                 // Show the appropriate sections based on the selected tab
                 const selectedTab = button.getAttribute('data-type');
@@ -37,6 +39,12 @@ class TabManager {
                             document.getElementById('audio-process-section').style.display = 'block';
                         }
                         break;
+                    case '3d':
+                        document.getElementById('3d-drop-zone').style.display = 'block';
+                        if (DataManager.getOriginal3DModel()) {
+                            document.getElementById('3d-process-section').style.display = 'block';
+                        }
+                        break;
                 }
             });
         });
@@ -53,17 +61,25 @@ class TabManager {
         document.getElementById('process-section').style.display = 'none';
         document.getElementById('image-process-section').style.display = 'none';
         document.getElementById('audio-process-section').style.display = 'none';
+        document.getElementById('3d-process-section').style.display = 'none';
         
         // Clear the data container
         document.getElementById('data-container').innerHTML = '';
 
         // Show the selected section
-        if (type === 'text') {
-            document.getElementById('process-section').style.display = 'block';
-        } else if (type === 'image') {
-            document.getElementById('image-process-section').style.display = 'block';
-        } else if (type === 'audio') {
-            document.getElementById('audio-process-section').style.display = 'block';
+        switch(type) {
+            case 'text':
+                document.getElementById('process-section').style.display = 'block';
+                break;
+            case 'image':
+                document.getElementById('image-process-section').style.display = 'block';
+                break;
+            case 'audio':
+                document.getElementById('audio-process-section').style.display = 'block';
+                break;
+            case '3d':
+                document.getElementById('3d-process-section').style.display = 'block';
+                break;
         }
 
         // Update tab button states

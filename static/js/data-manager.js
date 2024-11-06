@@ -3,6 +3,7 @@ class DataManager {
     static originalText = null;
     static originalImage = null;
     static originalAudio = null;
+    static original3DModel = null;
 
     static setCurrentData(data) {
         this.currentData = data;
@@ -34,5 +35,13 @@ class DataManager {
 
     static getOriginalAudio() {
         return this.originalAudio;
+    }
+
+    static setOriginal3DModel(modelData) {
+        this.original3DModel = modelData;
+    }
+
+    static getOriginal3DModel() {
+        return this.original3DModel;
     }
 } 
