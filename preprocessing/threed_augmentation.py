@@ -22,7 +22,14 @@ class ThreeDAugmenter:
         try:
             # Generate random rotation matrix
             rotation = Rotation.random()
-            mesh.apply_transform(rotation.as_matrix())
+            rotation_matrix = rotation.as_matrix()  # This gives us a 3x3 matrix
+            
+            # Convert to 4x4 transformation matrix
+            transform = np.eye(4)  # Create 4x4 identity matrix
+            transform[:3, :3] = rotation_matrix  # Insert the rotation matrix into top-left 3x3
+            
+            # Apply transformation
+            mesh.apply_transform(transform)
             return mesh
         except Exception as e:
             print(f"Error in random_rotation: {str(e)}")
@@ -104,7 +111,7 @@ class ThreeDAugmenter:
             augmented_mesh = mesh.copy()
             steps = {}
 
-            if options.get('3d-rotation', {}).get('enabled'):
+            if options.get('rotation', {}).get('enabled'):
                 print("Applying random rotation...")
                 augmented_mesh = self.random_rotation(augmented_mesh)
                 steps['Rotation'] = self._mesh_to_off_string(augmented_mesh)
@@ -126,6 +133,8 @@ class ThreeDAugmenter:
                 strength = float(options['deform'].get('strength', 0.1))
                 augmented_mesh = self.random_deformation(augmented_mesh, strength)
                 steps['Deform'] = self._mesh_to_off_string(augmented_mesh)
+
+            print(f"Augmentation steps: {steps}")
 
             return {
                 'augmentation_steps': steps,

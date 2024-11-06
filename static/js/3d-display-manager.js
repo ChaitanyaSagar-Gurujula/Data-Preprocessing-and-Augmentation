@@ -31,7 +31,7 @@ class ThreeDDisplayManager {
                         <h3>${stepName}</h3>
                         <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
                     </div>
-                    <div class="step-arrow">↓</div>
+                    <div class="step-arrow"></div>
                 `;
             }
         });
@@ -85,15 +85,18 @@ class ThreeDDisplayManager {
             'Deform'
         ];
         
-        // First, build the HTML
+        console.log("Augmentation steps received:", result.augmentation_steps);
+        
+        // Process steps in the correct order
         stepOrder.forEach(stepName => {
             if (result.augmentation_steps[stepName]) {
+                console.log(`Processing step: ${stepName}`);
                 html += `
                     <div class="augmentation-step">
                         <h3>${stepName}</h3>
                         <div id="${stepName.toLowerCase()}-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
                     </div>
-                    <div class="step-arrow">↓</div>
+                    <div class="step-arrow"></div>
                 `;
             }
         });
