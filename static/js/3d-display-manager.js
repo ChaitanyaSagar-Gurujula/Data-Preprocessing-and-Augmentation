@@ -13,7 +13,18 @@ class ThreeDDisplayManager {
 
     static async displayPreprocessed3DModel(result) {
         const container = document.getElementById('data-container');
-        let html = '<div class="preprocessing-steps">';
+        let html = '<div class="model-comparison" style="display: flex; gap: 20px;">';
+        
+        // Original model on the left
+        html += `
+            <div class="original-model" style="flex: 1;">
+                <h3>Original 3D Model</h3>
+                <div id="original-model-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
+            </div>
+        `;
+
+        // Preprocessing steps on the right
+        html += '<div class="preprocessing-steps" style="flex: 1;">';
         
         // Define the order of preprocessing steps
         const stepOrder = [
@@ -23,7 +34,7 @@ class ThreeDDisplayManager {
             'Smooth'
         ];
         
-        // First, build the HTML
+        // Add preprocessing steps
         stepOrder.forEach(stepName => {
             if (result.preprocessing_steps[stepName]) {
                 html += `
@@ -36,6 +47,7 @@ class ThreeDDisplayManager {
             }
         });
 
+        // Add final result
         html += `
             <div class="preprocessing-step">
                 <h3>Final Result</h3>
@@ -43,16 +55,24 @@ class ThreeDDisplayManager {
             </div>
         </div>`;
 
+        html += '</div>'; // Close model-comparison div
         container.innerHTML = html;
 
         // Store viewers for cleanup
         const viewers = [];
 
-        // Then initialize viewers using for...of loop
+        // Initialize original model viewer
+        const originalViewer = await ThreeDDisplayManager.initializeViewer(
+            'original-model-viewer',
+            DataManager.getOriginal3DModel()
+        );
+        viewers.push(originalViewer);
+
+        // Initialize preprocessing step viewers
         for (const stepName of stepOrder) {
             if (result.preprocessing_steps[stepName]) {
                 const viewer = await ThreeDDisplayManager.initializeViewer(
-                    `${stepName.toLowerCase()}-viewer`, 
+                    `${stepName.toLowerCase()}-viewer`,
                     result.preprocessing_steps[stepName]
                 );
                 viewers.push(viewer);
@@ -75,7 +95,18 @@ class ThreeDDisplayManager {
 
     static async displayAugmented3DModel(result) {
         const container = document.getElementById('data-container');
-        let html = '<div class="augmentation-steps">';
+        let html = '<div class="model-comparison" style="display: flex; gap: 20px;">';
+        
+        // Original model on the left
+        html += `
+            <div class="original-model" style="flex: 1;">
+                <h3>Original 3D Model</h3>
+                <div id="original-model-viewer" style="width: 100%; height: 400px; border: 1px solid #ccc;"></div>
+            </div>
+        `;
+
+        // Augmentation steps on the right
+        html += '<div class="augmentation-steps" style="flex: 1;">';
         
         // Define the order of augmentation steps
         const stepOrder = [
