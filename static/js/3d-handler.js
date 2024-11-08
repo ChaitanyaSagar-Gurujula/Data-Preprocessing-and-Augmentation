@@ -34,7 +34,7 @@ class ThreeDHandler {
     }
 
     static isValidFileType(file) {
-        const validTypes = ['.obj', '.stl', '.ply', '.glb', '.gltf'];
+        const validTypes = ['.obj', '.stl', '.ply', '.glb', '.gltf', '.off'];
         return validTypes.some(type => file.name.toLowerCase().endsWith(type));
     }
 
