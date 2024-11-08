@@ -196,11 +196,11 @@ class ThreeDDisplayManager {
         renderer.setSize(width, height);
         container.appendChild(renderer.domElement);
 
-        // Create mesh with blue color
+        // Create mesh with medium light blue color
         const material = new THREE.MeshPhongMaterial({
-            color: 0x0000ff,  // Changed to blue
+            color: 0x87CEEB,  // SkyBlue - good balance for visibility
             side: THREE.DoubleSide,
-            flatShading: false  // Smooth shading
+            flatShading: false
         });
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
@@ -223,7 +223,7 @@ class ThreeDDisplayManager {
         controls.enablePan = false;   // Disable panning
         controls.enableDamping = true;
 
-        // Create coordinate labels
+        // Create coordinate labels with renderOrder
         const createLabel = (text, position) => {
             const canvas = document.createElement('canvas');
             canvas.width = 64;
@@ -236,24 +236,29 @@ class ThreeDDisplayManager {
             ctx.fillText(text, canvas.width/2, canvas.height/2);
 
             const texture = new THREE.CanvasTexture(canvas);
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const spriteMaterial = new THREE.SpriteMaterial({ 
+                map: texture,
+                depthTest: false,  // Disable depth testing
+                depthWrite: false  // Don't write to depth buffer
+            });
             const sprite = new THREE.Sprite(spriteMaterial);
             sprite.position.copy(position);
             sprite.scale.set(maxDimension/5, maxDimension/10, 1);
+            sprite.renderOrder = 999;  // Ensure labels render last
             return sprite;
         };
 
-        // Add coordinate labels
+        // Add coordinate labels with adjusted positions
         const labelOffset = maxDimension * 1.1;
-        scene.add(createLabel('X', new THREE.Vector3(labelOffset, 0, 0)));
-        scene.add(createLabel('Y', new THREE.Vector3(0, labelOffset, 0)));
-        scene.add(createLabel('Z', new THREE.Vector3(0, 0, labelOffset)));
+        const xLabel = createLabel('X', new THREE.Vector3(labelOffset, 0, 0));
+        const yLabel = createLabel('Y', new THREE.Vector3(0, labelOffset, 0));
+        const zLabel = createLabel('Z', new THREE.Vector3(0, 0, labelOffset));
+        
+        scene.add(xLabel);
+        scene.add(yLabel);
+        scene.add(zLabel);
 
-        // Add axes with actual dimensions
-        const axes = new THREE.AxesHelper(maxDimension);
-        scene.add(axes);
-
-        // Add dimension labels
+        // Add dimension labels with same visibility settings
         const addDimensionLabels = () => {
             const positions = [
                 { value: modelSize.x.toFixed(2), pos: new THREE.Vector3(modelSize.x/2, -labelOffset/4, 0) },
@@ -262,10 +267,15 @@ class ThreeDDisplayManager {
             ];
 
             positions.forEach(({value, pos}) => {
-                scene.add(createLabel(value, pos));
+                const label = createLabel(value, pos);
+                scene.add(label);
             });
         };
         addDimensionLabels();
+
+        // Add axes with actual dimensions
+        const axes = new THREE.AxesHelper(maxDimension);
+        scene.add(axes);
 
         // Animation loop
         function animate() {
