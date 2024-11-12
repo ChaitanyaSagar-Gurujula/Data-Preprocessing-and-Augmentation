@@ -33,23 +33,39 @@ class TextAugmenter:
         positions_to_replace = random.sample(replaceable_positions, n_words)
         
         for pos in positions_to_replace:
-            original_word = words[pos]
+            original_word = words[pos].lower()
             
             # Create masked text
             words[pos] = self.mask_token
             masked_text = ' '.join(words)
         
-            # Get predictions
+            # Get predictions and filter out the original word
             predictions = self.unmasker(masked_text)
-            new_word = predictions[0]['token_str']
+            filtered_predictions = [
+                pred for pred in predictions 
+                if pred['token_str'].lower() != original_word
+            ]
+            
+            # If we have filtered predictions, use them; otherwise try again
+            if filtered_predictions:
+                new_word = filtered_predictions[0]['token_str']
+            else:
+                # If no alternative found, try getting more predictions
+                predictions = self.unmasker(masked_text, top_k=10)
+                filtered_predictions = [
+                    pred for pred in predictions 
+                    if pred['token_str'].lower() != original_word
+                ]
+                new_word = filtered_predictions[0]['token_str'] if filtered_predictions else original_word
         
             # Replace word
             words[pos] = new_word
             
-            # Track changes
-            changes['positions'].append(pos)
-            changes['old_words'].append(original_word)
-            changes['new_words'].append(new_word)
+            # Only track changes if we actually replaced with a different word
+            if new_word.lower() != original_word:
+                changes['positions'].append(pos)
+                changes['old_words'].append(original_word)
+                changes['new_words'].append(new_word)
         
         return ' '.join(words), changes
         
